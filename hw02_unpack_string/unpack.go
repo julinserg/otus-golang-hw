@@ -40,17 +40,27 @@ func Unpack(str string) (string, error) {
 	var resultStrBuilder strings.Builder
 	var prevSymbol rune
 	prevSymbolExist := false
+	slashSymbolExist := false
 	for _, symbol := range str {
 		if unicode.IsDigit(symbol) {
+			if string(prevSymbol) == `\` && !slashSymbolExist {
+				prevSymbol = symbol
+				continue
+			}
 			err := buildSequenceSymbols(symbol, prevSymbol, prevSymbolExist, &resultStrBuilder)
 			if err != nil {
 				return "", err
 			}
 			prevSymbolExist = false
 		} else {
+			if string(symbol) == `\` && string(prevSymbol) == `\` && !slashSymbolExist {
+				slashSymbolExist = true
+				continue
+			}
 			buildOneSymbol(prevSymbol, prevSymbolExist, &resultStrBuilder)
 			prevSymbol = symbol
 			prevSymbolExist = true
+			slashSymbolExist = false
 		}
 	}
 	if prevSymbolExist {
