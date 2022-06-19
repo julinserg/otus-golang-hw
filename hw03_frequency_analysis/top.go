@@ -5,23 +5,31 @@ import (
 	"strings"
 )
 
-type wordFreq struct {
+type wordFreqType struct {
 	name string
 	freq int
 }
 
 func Top10(str string) []string {
+	if len(str) == 0 {
+		return []string{}
+	}
+
 	sliceWord := strings.Fields(str)
+
+	if len(sliceWord) == 0 {
+		return []string{}
+	}
 
 	freqMap := make(map[string]int)
 
 	for i := 0; i < len(sliceWord); i++ {
-		freqMap[sliceWord[i]] += 1
+		freqMap[sliceWord[i]]++
 	}
 
-	wordFreqSlice := make([]wordFreq, 0, len(freqMap))
+	wordFreqSlice := make([]wordFreqType, 0, len(freqMap))
 	for k, v := range freqMap {
-		wordFreqSlice = append(wordFreqSlice, wordFreq{k, v})
+		wordFreqSlice = append(wordFreqSlice, wordFreqType{k, v})
 	}
 	sort.Slice(wordFreqSlice, func(i, j int) bool {
 		if wordFreqSlice[i].freq > wordFreqSlice[j].freq {
@@ -29,24 +37,19 @@ func Top10(str string) []string {
 		} else if wordFreqSlice[i].freq == wordFreqSlice[j].freq {
 			if wordFreqSlice[i].name < wordFreqSlice[j].name {
 				return true
-			} else {
-				return false
 			}
-		} else {
-			return false
 		}
-
+		return false
 	})
 
-	wordSlice := make([]string, 0, len(freqMap))
+	if len(wordFreqSlice) >= 10 {
+		wordFreqSlice = wordFreqSlice[0:10]
+	}
+
+	wordSlice := make([]string, 0, len(wordFreqSlice))
 	for _, val := range wordFreqSlice {
 		wordSlice = append(wordSlice, val.name)
 	}
 
-	if len(wordSlice) >= 10 {
-		return wordSlice[0:10]
-	} else {
-		return wordSlice
-	}
-
+	return wordSlice
 }
