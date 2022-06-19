@@ -44,7 +44,8 @@ func Unpack(str string) (string, error) {
 	prevSymbolExist := false
 	slashSymbolExist := false
 	for _, symbol := range str {
-		if !unicode.IsDigit(symbol) && string(prevSymbol) == slashSymbol && string(symbol) != slashSymbol && !slashSymbolExist {
+		if !unicode.IsDigit(symbol) && string(prevSymbol) == slashSymbol &&
+			string(symbol) != slashSymbol && !slashSymbolExist {
 			return "", ErrInvalidString
 		}
 		if unicode.IsDigit(symbol) {
