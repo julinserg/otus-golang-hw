@@ -48,6 +48,9 @@ var (
 	textSynthetic2 = `4 3 6 7 1 2 5 8 9 0`
 	textSynthetic3 = `4 4 4 4 3 3 3 6 7 1 2 2 5 8 9`
 	textSynthetic4 = `cat and dog, one dog,two cats and one man`
+	textSynthetic5 = `  cat     and dog,    one dog,two cats    and one     man`
+	textSynthetic6 = `cat And dog, one dog,two cats and one man -`
+	textSynthetic7 = `cat and dog, one dog, two cats and one man`
 )
 
 func TestTop10(t *testing.T) {
@@ -133,5 +136,43 @@ func TestTop10(t *testing.T) {
 			"man",     // 1
 		}
 		require.Equal(t, expected, Top10(textSynthetic4))
+	})
+	t.Run("textSynthetic5", func(t *testing.T) {
+		expected := []string{
+			"and",     // 2
+			"one",     // 2
+			"cat",     // 1
+			"cats",    // 1
+			"dog,",    // 1
+			"dog,two", // 1
+			"man",     // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic5))
+	})
+	t.Run("textSynthetic6", func(t *testing.T) {
+		expected := []string{
+			"one",     // 2
+			"-",       // 1
+			"And",     // 1
+			"and",     // 1
+			"cat",     // 1
+			"cats",    // 1
+			"dog,",    // 1
+			"dog,two", // 1
+			"man",     // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic6))
+	})
+	t.Run("textSynthetic7", func(t *testing.T) {
+		expected := []string{
+			"and",  // 2
+			"dog,", // 2
+			"one",  // 2
+			"cat",  // 1
+			"cats", // 1
+			"man",  // 1
+			"two",  // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic7))
 	})
 }
