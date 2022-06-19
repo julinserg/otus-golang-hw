@@ -10,15 +10,17 @@ type wordFreqType struct {
 	freq int
 }
 
+const numberOutputElements = 10
+
 func Top10(str string) []string {
 	if len(str) == 0 {
-		return []string{}
+		return nil
 	}
 
 	sliceWord := strings.Fields(str)
 
 	if len(sliceWord) == 0 {
-		return []string{}
+		return nil
 	}
 
 	freqMap := make(map[string]int)
@@ -42,8 +44,8 @@ func Top10(str string) []string {
 		return false
 	})
 
-	if len(wordFreqSlice) >= 10 {
-		wordFreqSlice = wordFreqSlice[0:10]
+	if len(wordFreqSlice) >= numberOutputElements {
+		wordFreqSlice = wordFreqSlice[:numberOutputElements]
 	}
 
 	wordSlice := make([]string, 0, len(wordFreqSlice))
