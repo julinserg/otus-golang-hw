@@ -9,6 +9,8 @@ import (
 
 var ErrInvalidString = errors.New("invalid string")
 
+const slashSymbol = `\`
+
 func buildOneSymbol(prevSymbol rune, prevSymbolExist bool, strBuilder *strings.Builder) {
 	if prevSymbolExist {
 		strBuilder.WriteRune(prevSymbol)
@@ -42,11 +44,11 @@ func Unpack(str string) (string, error) {
 	prevSymbolExist := false
 	slashSymbolExist := false
 	for _, symbol := range str {
-		if !unicode.IsDigit(symbol) && string(prevSymbol) == `\` && string(symbol) != `\` && !slashSymbolExist {
+		if !unicode.IsDigit(symbol) && string(prevSymbol) == slashSymbol && string(symbol) != slashSymbol && !slashSymbolExist {
 			return "", ErrInvalidString
 		}
 		if unicode.IsDigit(symbol) {
-			if string(prevSymbol) == `\` && !slashSymbolExist {
+			if string(prevSymbol) == slashSymbol && !slashSymbolExist {
 				prevSymbol = symbol
 				continue
 			}
@@ -56,7 +58,7 @@ func Unpack(str string) (string, error) {
 			}
 			prevSymbolExist = false
 		} else {
-			if string(symbol) == `\` && string(prevSymbol) == `\` && !slashSymbolExist {
+			if string(symbol) == slashSymbol && string(prevSymbol) == slashSymbol && !slashSymbolExist {
 				slashSymbolExist = true
 				continue
 			}
