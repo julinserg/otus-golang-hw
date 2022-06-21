@@ -43,6 +43,16 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
+var (
+	textSynthetic1 = `aaaaaaaaaaaa`
+	textSynthetic2 = `4 3 6 7 1 2 5 8 9 0`
+	textSynthetic3 = `4 4 4 4 3 3 3 6 7 1 2 2 5 8 9`
+	textSynthetic4 = `cat and dog, one dog,two cats and one man`
+	textSynthetic5 = `  cat     and dog,    one dog,two cats    and one     man`
+	textSynthetic6 = `cat And dog, one dog,two cats and one man -`
+	textSynthetic7 = `cat and dog, one dog, two cats and one man`
+)
+
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		require.Len(t, Top10(""), 0)
@@ -78,5 +88,91 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+
+	t.Run("textSynthetic1", func(t *testing.T) {
+		expected := []string{
+			"aaaaaaaaaaaa", // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic1))
+	})
+	t.Run("textSynthetic2", func(t *testing.T) {
+		expected := []string{
+			"0", // 1
+			"1", // 1
+			"2", // 1
+			"3", // 1
+			"4", // 1
+			"5", // 1
+			"6", // 1
+			"7", // 1
+			"8", // 1
+			"9", // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic2))
+	})
+	t.Run("textSynthetic3", func(t *testing.T) {
+		expected := []string{
+			"4", // 4
+			"3", // 2
+			"2", // 2
+			"1", // 1
+			"5", // 1
+			"6", // 1
+			"7", // 1
+			"8", // 1
+			"9", // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic3))
+	})
+	t.Run("textSynthetic4", func(t *testing.T) {
+		expected := []string{
+			"and",     // 2
+			"one",     // 2
+			"cat",     // 1
+			"cats",    // 1
+			"dog,",    // 1
+			"dog,two", // 1
+			"man",     // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic4))
+	})
+	t.Run("textSynthetic5", func(t *testing.T) {
+		expected := []string{
+			"and",     // 2
+			"one",     // 2
+			"cat",     // 1
+			"cats",    // 1
+			"dog,",    // 1
+			"dog,two", // 1
+			"man",     // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic5))
+	})
+	t.Run("textSynthetic6", func(t *testing.T) {
+		expected := []string{
+			"one",     // 2
+			"-",       // 1
+			"And",     // 1
+			"and",     // 1
+			"cat",     // 1
+			"cats",    // 1
+			"dog,",    // 1
+			"dog,two", // 1
+			"man",     // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic6))
+	})
+	t.Run("textSynthetic7", func(t *testing.T) {
+		expected := []string{
+			"and",  // 2
+			"dog,", // 2
+			"one",  // 2
+			"cat",  // 1
+			"cats", // 1
+			"man",  // 1
+			"two",  // 1
+		}
+		require.Equal(t, expected, Top10(textSynthetic7))
 	})
 }
