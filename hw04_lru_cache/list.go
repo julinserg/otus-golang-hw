@@ -17,51 +17,66 @@ type ListItem struct {
 }
 
 type list struct {
-	m_front *ListItem
-	m_back  *ListItem
-	m_size  int
+	mFront *ListItem
+	mBack  *ListItem
+	mSize  int
 }
 
 func (l list) Len() int {
-	return l.m_size
+	return l.mSize
 }
 
 func (l list) Front() *ListItem {
-	return l.m_front
+	return l.mFront
 }
 
 func (l list) Back() *ListItem {
-	return l.m_back
+	return l.mBack
 }
 
 func (l list) PushFront(v interface{}) *ListItem {
-	l.m_size++
+	l.mSize++
 	node := new(ListItem)
 	node.Value = v
-	node.Next = l.m_front
+	node.Next = l.mFront
 	node.Prev = nil
-	l.m_front.Prev = node
+	if l.mFront != nil {
+		l.mFront.Prev = node
+	} else {
+		l.mFront = node
+		l.mBack = node
+	}
+
 	return node
 }
 
 func (l list) PushBack(v interface{}) *ListItem {
-	l.m_size++
+	l.mSize++
 	node := new(ListItem)
 	node.Value = v
 	node.Next = nil
-	node.Prev = l.m_back
-	l.m_back.Next = node
+	node.Prev = l.mBack
+	if l.mBack != nil {
+		l.mBack.Next = node
+	} else {
+		l.mBack = node
+		l.mFront = node
+	}
+
 	return node
 }
 
 func (l list) Remove(i *ListItem) {
-	l.m_size--
+	l.mSize--
 	if i.Prev == nil {
-		l.m_front.Next.Prev = nil
-		l.m_front = l.m_front.Next
+		l.mFront.Next.Prev = nil
+		l.mFront = l.mFront.Next
 	} else if i.Next == nil {
-		l.m_back.Prev.Next = nil
-		l.m_back = l.m_back.Prev
+		l.mBack.Prev.Next = nil
+		l.mBack = l.mBack.Prev
+	} else {
+		i.Prev.Next = i.Next
+		i.Next.Prev = i.Prev
 	}
 }
 
