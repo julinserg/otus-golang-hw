@@ -22,19 +22,19 @@ type list struct {
 	mSize  int
 }
 
-func (l list) Len() int {
+func (l *list) Len() int {
 	return l.mSize
 }
 
-func (l list) Front() *ListItem {
+func (l *list) Front() *ListItem {
 	return l.mFront
 }
 
-func (l list) Back() *ListItem {
+func (l *list) Back() *ListItem {
 	return l.mBack
 }
 
-func (l list) PushFront(v interface{}) *ListItem {
+func (l *list) PushFront(v interface{}) *ListItem {
 	l.mSize++
 	node := new(ListItem)
 	node.Value = v
@@ -42,6 +42,7 @@ func (l list) PushFront(v interface{}) *ListItem {
 	node.Prev = nil
 	if l.mFront != nil {
 		l.mFront.Prev = node
+		l.mFront = node
 	} else {
 		l.mFront = node
 		l.mBack = node
@@ -50,7 +51,7 @@ func (l list) PushFront(v interface{}) *ListItem {
 	return node
 }
 
-func (l list) PushBack(v interface{}) *ListItem {
+func (l *list) PushBack(v interface{}) *ListItem {
 	l.mSize++
 	node := new(ListItem)
 	node.Value = v
@@ -58,6 +59,7 @@ func (l list) PushBack(v interface{}) *ListItem {
 	node.Prev = l.mBack
 	if l.mBack != nil {
 		l.mBack.Next = node
+		l.mBack = node
 	} else {
 		l.mBack = node
 		l.mFront = node
@@ -66,22 +68,41 @@ func (l list) PushBack(v interface{}) *ListItem {
 	return node
 }
 
-func (l list) Remove(i *ListItem) {
+func (l *list) Remove(i *ListItem) {
 	l.mSize--
-	if i.Prev == nil {
+	switch {
+	case i.Prev == nil && i.Next != nil:
 		l.mFront.Next.Prev = nil
 		l.mFront = l.mFront.Next
-	} else if i.Next == nil {
+	case i.Next == nil && i.Prev != nil:
 		l.mBack.Prev.Next = nil
 		l.mBack = l.mBack.Prev
-	} else {
+	case i.Next == nil && i.Prev == nil:
+		l.mBack = nil
+		l.mFront = nil
+	default:
 		i.Prev.Next = i.Next
 		i.Next.Prev = i.Prev
 	}
 }
 
-func (l list) MoveToFront(i *ListItem) {
-
+func (l *list) MoveToFront(i *ListItem) {
+	switch {
+	case i.Prev == nil && i.Next != nil:
+		return
+	case i.Next == nil && i.Prev != nil:
+		l.mBack.Prev.Next = nil
+		l.mBack = l.mBack.Prev
+	case i.Next == nil && i.Prev == nil:
+		return
+	default:
+		i.Prev.Next = i.Next
+		i.Next.Prev = i.Prev
+	}
+	l.mFront.Prev = i
+	i.Prev = nil
+	i.Next = l.mFront
+	l.mFront = i
 }
 
 func NewList() List {
