@@ -11,7 +11,6 @@ type Task func() error
 
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
-
 	wg := &sync.WaitGroup{}
 	wgMonitor1 := &sync.WaitGroup{}
 	wgMonitor2 := &sync.WaitGroup{}
@@ -25,7 +24,6 @@ func Run(tasks []Task, n, m int) error {
 			if len(tasks) > 0 {
 				taskForRun := tasks[0]
 				tasks = tasks[1:]
-				//fmt.Println("tasks size", len(tasks))
 				muTask.Unlock()
 
 				err := taskForRun()
@@ -47,16 +45,17 @@ func Run(tasks []Task, n, m int) error {
 		close(chanErrorNotify)
 	}()
 
-	isStopSendError := false
+	isStopSendError := new(bool)
+	*isStopSendError = false
 	wgMonitor2.Add(1)
 	go func() {
 		defer wgMonitor2.Done()
 		countTaskWhithError := 0
 		for err := range chanErrorNotify {
-			if err != nil && m > 0 && !isStopSendError {
+			if err != nil && m > 0 && !*isStopSendError {
 				countTaskWhithError++
 				if countTaskWhithError == m {
-					isStopSendError = true
+					*isStopSendError = true
 					muTask.Lock()
 					tasks = nil
 					muTask.Unlock()
@@ -67,7 +66,7 @@ func Run(tasks []Task, n, m int) error {
 
 	wgMonitor1.Wait()
 	wgMonitor2.Wait()
-	if isStopSendError {
+	if *isStopSendError {
 		return ErrErrorsLimitExceeded
 	}
 	return nil
