@@ -9,64 +9,62 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-// Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
-func Run(tasks []Task, n, m int) error {
-	wg := &sync.WaitGroup{}
-	wgMonitor1 := &sync.WaitGroup{}
-	wgMonitor2 := &sync.WaitGroup{}
-	muTask := &sync.Mutex{}
-	chanErrorNotify := make(chan error, n)
-
-	worker := func() {
-		defer wg.Done()
-		for {
-			muTask.Lock()
-			if len(tasks) > 0 {
-				taskForRun := tasks[0]
-				tasks = tasks[1:]
-				muTask.Unlock()
-
-				err := taskForRun()
-				chanErrorNotify <- err
-			} else {
-				muTask.Unlock()
+func worker(tasks <-chan Task, results chan<- error, quit chan interface{}, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		select {
+		case <-quit:
+			return
+		default:
+		}
+		select {
+		case task, ok := <-tasks:
+			if !ok {
 				return
 			}
+			err := task()
+			results <- err
+		case <-quit:
+			return
 		}
 	}
+}
+
+// Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
+func Run(tasks []Task, n, m int) error {
+	numTask := len(tasks)
+	isStopSendError := false
+	wg := &sync.WaitGroup{}
+	chanTasks := make(chan Task, numTask)
+	chanError := make(chan error, numTask)
+	chanQuit := make(chan interface{}, n)
+
 	wg.Add(n)
 	for i := 0; i < n; i++ {
-		go worker()
+		go worker(chanTasks, chanError, chanQuit, wg)
 	}
-	wgMonitor1.Add(1)
-	go func() {
-		defer wgMonitor1.Done()
-		wg.Wait()
-		close(chanErrorNotify)
-	}()
+	for i := 0; i < numTask; i++ {
+		chanTasks <- tasks[i]
+	}
+	close(chanTasks)
 
-	isStopSendError := new(bool)
-	*isStopSendError = false
-	wgMonitor2.Add(1)
-	go func() {
-		defer wgMonitor2.Done()
-		countTaskWhithError := 0
-		for err := range chanErrorNotify {
-			if err != nil && m > 0 && !*isStopSendError {
-				countTaskWhithError++
-				if countTaskWhithError == m {
-					*isStopSendError = true
-					muTask.Lock()
-					tasks = nil
-					muTask.Unlock()
+	countTaskWhithError := 0
+	for i := 0; i < numTask; i++ {
+		err := <-chanError
+		if err != nil && m > 0 {
+			countTaskWhithError++
+			if countTaskWhithError == m {
+				isStopSendError = true
+				for j := 0; j < n; j++ {
+					chanQuit <- struct{}{}
 				}
+				close(chanQuit)
+				break
 			}
 		}
-	}()
-
-	wgMonitor1.Wait()
-	wgMonitor2.Wait()
-	if *isStopSendError {
+	}
+	wg.Wait()
+	if isStopSendError {
 		return ErrErrorsLimitExceeded
 	}
 	return nil
