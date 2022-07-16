@@ -33,6 +33,7 @@ func worker(tasks <-chan Task, results chan<- error, quit chan interface{}, wg *
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	numTask := len(tasks)
+	indexTask := 0
 	isStopSendError := false
 	wg := &sync.WaitGroup{}
 	chanTasks := make(chan Task, numTask)
@@ -43,10 +44,14 @@ func Run(tasks []Task, n, m int) error {
 	for i := 0; i < n; i++ {
 		go worker(chanTasks, chanError, chanQuit, wg)
 	}
-	for i := 0; i < numTask; i++ {
-		chanTasks <- tasks[i]
+	runTask := n
+	if numTask < n {
+		runTask = numTask
 	}
-	close(chanTasks)
+	for i := 0; i < runTask; i++ {
+		chanTasks <- tasks[i]
+		indexTask++
+	}
 
 	countTaskWhithError := 0
 	for i := 0; i < numTask; i++ {
@@ -62,7 +67,13 @@ func Run(tasks []Task, n, m int) error {
 				break
 			}
 		}
+
+		if indexTask < numTask {
+			chanTasks <- tasks[indexTask]
+			indexTask++
+		}
 	}
+	close(chanTasks)
 	wg.Wait()
 	if isStopSendError {
 		return ErrErrorsLimitExceeded
