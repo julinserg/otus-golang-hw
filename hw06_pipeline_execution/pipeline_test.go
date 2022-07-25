@@ -2,6 +2,7 @@ package hw06pipelineexecution
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -89,5 +90,44 @@ func TestPipeline(t *testing.T) {
 
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
+	})
+}
+
+func TestPipelineWithoutSleep(t *testing.T) {
+	// Stage generator
+	g := func(_ string, f func(v interface{}) interface{}) Stage {
+		return func(in In) Out {
+			out := make(Bi)
+			go func() {
+				defer close(out)
+				for v := range in {
+					out <- f(v)
+				}
+			}()
+			return out
+		}
+	}
+
+	stages := []Stage{
+		g("ToUpper", func(v interface{}) interface{} { return strings.ToUpper(v.(string)) }),
+		g("Adder (!)", func(v interface{}) interface{} { return v.(string) + "!" }),
+	}
+
+	t.Run("simple case", func(t *testing.T) {
+		in := make(Bi)
+		data := []string{"str1", "str2", "str3", "str4", "str5"}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 5)
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+		require.Equal(t, []string{"STR1!", "STR2!", "STR3!", "STR4!", "STR5!"}, result)
 	})
 }
