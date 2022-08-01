@@ -23,6 +23,7 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 				select {
 				case <-done:
 					close(c)
+					return
 				default:
 					time.Sleep(1 * time.Millisecond)
 				}
