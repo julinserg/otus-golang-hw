@@ -21,27 +21,27 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	envGlobalMap := make(map[string]string, len(envGlobal))
 	for _, elem := range envGlobal {
 		envStringSlice := strings.Split(elem, "=")
-		if len(envStringSlice) != 2 {
+		if len(envStringSlice) == 1 {
+			envGlobalMap[envStringSlice[0]] = ""
+			continue
+		}
+		if len(envStringSlice) < 2 {
 			continue
 		}
 		envGlobalMap[envStringSlice[0]] = envStringSlice[1]
 	}
 
-	var sliceStringEnvForRemove []string
 	for kEnv, vEnv := range env {
 		if vEnv.NeedRemove {
-			sliceStringEnvForRemove = append(sliceStringEnvForRemove, kEnv)
-			continue
+			delete(envGlobalMap, kEnv)
 		}
+	}
+
+	for kEnv, vEnv := range env {
 		if strings.Contains(kEnv, "=") {
 			continue
 		}
-		strings.TrimRight(kEnv, " 	")
 		envGlobalMap[kEnv] = vEnv.Value
-	}
-
-	for _, key := range sliceStringEnvForRemove {
-		delete(envGlobalMap, key)
 	}
 
 	var envGlobalResult []string
