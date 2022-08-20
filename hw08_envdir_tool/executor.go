@@ -59,7 +59,6 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		fmt.Println(err)
 		return 1
 	}
-	fmt.Printf("Waiting for command to finish...")
 	if err := execCmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {

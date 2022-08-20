@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,13 +59,17 @@ func ReadDir(dir string) (Environment, error) {
 			fmt.Println("ReadDir error scanner.Scan() - scanner not read line")
 			continue
 		}
-		valEnv := scanner.Text()
-		strings.TrimRight(valEnv, " 	")
-		strings.ReplaceAll(valEnv, `0x00`, `\n`)
+		firstStrFromFile := scanner.Text()
 		if err := scanner.Err(); err != nil {
 			fmt.Println(err)
 			continue
 		}
+		dat := []byte(firstStrFromFile)
+		fromRep := []byte{0}
+		toRep := []byte("\n")
+		dat = bytes.ReplaceAll(dat, fromRep, toRep)
+		strDat := string(dat)
+		valEnv := strings.TrimRight(strDat, " 	")
 
 		env[v.Name()] = EnvValue{valEnv, false}
 	}
