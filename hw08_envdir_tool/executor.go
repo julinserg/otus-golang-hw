@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,8 +15,12 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		fmt.Println("name command not pass")
 		return 1
 	}
-
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
+	pathToCmd := cmd[0]
+	if len(pathToCmd) == 0 {
+		fmt.Println("name command is empty")
+		return 1
+	}
+	execCmd := exec.Command(pathToCmd, cmd[1:]...)
 
 	envGlobal := os.Environ()
 	envGlobalMap := make(map[string]string, len(envGlobal))
@@ -31,22 +36,22 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		envGlobalMap[envStringSlice[0]] = envStringSlice[1]
 	}
 
-	for kEnv, vEnv := range env {
-		if vEnv.NeedRemove {
-			delete(envGlobalMap, kEnv)
+	for key, value := range env {
+		if value.NeedRemove {
+			delete(envGlobalMap, key)
 		}
 	}
 
-	for kEnv, vEnv := range env {
-		if strings.Contains(kEnv, "=") {
+	for key, value := range env {
+		if strings.Contains(key, "=") {
 			continue
 		}
-		envGlobalMap[kEnv] = vEnv.Value
+		envGlobalMap[key] = value.Value
 	}
 
-	var envGlobalResult []string
-	for kEnv, vEnv := range envGlobalMap {
-		envGlobalResult = append(envGlobalResult, kEnv+"="+vEnv)
+	envGlobalResult := make([]string, 0, len(envGlobalMap))
+	for key, value := range envGlobalMap {
+		envGlobalResult = append(envGlobalResult, key+"="+value)
 	}
 	execCmd.Env = envGlobalResult
 
@@ -60,8 +65,9 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		return 1
 	}
 	if err := execCmd.Wait(); err != nil {
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 				fmt.Printf("Exit Status: %d", status.ExitStatus())
 				return status.ExitStatus()
 			}
