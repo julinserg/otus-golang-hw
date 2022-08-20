@@ -3,5 +3,6 @@ package main
 import "testing"
 
 func TestRunCmd(t *testing.T) {
-	// Place your code here
+
+	//retCode := RunCmd(os.Args[2:], env)
 }
