@@ -43,9 +43,6 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	}
 
 	for key, value := range env {
-		if strings.Contains(key, "=") {
-			continue
-		}
 		envGlobalMap[key] = value.Value
 	}
 

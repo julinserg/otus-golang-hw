@@ -36,6 +36,9 @@ func ReadDir(dir string) (Environment, error) {
 		if v.IsDir() {
 			continue
 		}
+		if strings.Contains(v.Name(), "=") {
+			continue
+		}
 		pathToFile := filepath.Join(dir, v.Name())
 		file, err := os.Open(pathToFile)
 		if err != nil {
