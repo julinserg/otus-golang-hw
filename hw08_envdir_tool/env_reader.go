@@ -17,6 +17,32 @@ type EnvValue struct {
 	NeedRemove bool
 }
 
+func readFirstLineInFile(pathToFile string) (*EnvValue, error) {
+	file, err := os.Open(pathToFile)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	fileStat, err := os.Stat(pathToFile)
+	if err != nil {
+		return nil, err
+	}
+	if fileStat.Size() == 0 {
+		return &EnvValue{"", true}, err
+	}
+
+	scanner := bufio.NewScanner(file)
+	if !scanner.Scan() {
+		return nil, fmt.Errorf("ReadDir error scanner.Scan() - scanner not read line")
+	}
+	firstStrFromFile := scanner.Text()
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return &EnvValue{firstStrFromFile, false}, nil
+}
+
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
@@ -40,34 +66,16 @@ func ReadDir(dir string) (Environment, error) {
 			continue
 		}
 		pathToFile := filepath.Join(dir, v.Name())
-		file, err := os.Open(pathToFile)
+		valEnvRaw, err := readFirstLineInFile(pathToFile)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		defer file.Close()
-
-		fileStat, err := os.Stat(pathToFile)
-		if err != nil {
-			fmt.Println(err)
+		if valEnvRaw.NeedRemove {
+			env[v.Name()] = *valEnvRaw
 			continue
 		}
-		if fileStat.Size() == 0 {
-			env[v.Name()] = EnvValue{"", true}
-			continue
-		}
-
-		scanner := bufio.NewScanner(file)
-		if !scanner.Scan() {
-			fmt.Println("ReadDir error scanner.Scan() - scanner not read line")
-			continue
-		}
-		firstStrFromFile := scanner.Text()
-		if err := scanner.Err(); err != nil {
-			fmt.Println(err)
-			continue
-		}
-		dat := []byte(firstStrFromFile)
+		dat := []byte(valEnvRaw.Value)
 		fromRep := []byte{0}
 		toRep := []byte("\n")
 		dat = bytes.ReplaceAll(dat, fromRep, toRep)

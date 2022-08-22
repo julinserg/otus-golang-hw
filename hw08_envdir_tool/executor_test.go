@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -44,7 +44,8 @@ func TestRunCmd(t *testing.T) {
 	retCode = RunCmd([]string{"./testdata/echo.sh", "arg1=1", "arg2=2"}, env)
 	require.Equal(t, retCode, 0)
 	w.Close()
-	out, _ := ioutil.ReadAll(r)
+
+	out, _ := io.ReadAll(r)
 	os.Stdout = rescueStdout
 
 	s := string(out)
