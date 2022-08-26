@@ -2,8 +2,11 @@ package hw09structvalidator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -42,19 +45,30 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			in: App{
+				Version: "26.08.2022",
+			},
+			expectedErr: errors.New("Field: Version, Err: bad length"),
 		},
-		// ...
-		// Place your code here.
+		{
+			in: App{
+				Version: "26.08",
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tt := tt
 			t.Parallel()
+			actualError := Validate(tt.in)
+			if tt.expectedErr != nil {
+				require.EqualError(t, actualError, tt.expectedErr.Error())
+			} else {
+				require.Nil(t, actualError)
+			}
 
-			// Place your code here.
-			_ = tt
 		})
 	}
 }
