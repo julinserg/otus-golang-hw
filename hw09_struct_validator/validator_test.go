@@ -48,13 +48,17 @@ func TestValidate(t *testing.T) {
 			in: App{
 				Version: "26.08.2022",
 			},
-			expectedErr: errors.New("Field: Version, Err: bad length"),
+			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: errors.New("bad length")}},
 		},
 		{
 			in: App{
 				Version: "26.08",
 			},
 			expectedErr: nil,
+		},
+		{
+			in:          "struct",
+			expectedErr: &AppError{Err: errors.New("v not struct")},
 		},
 	}
 
@@ -65,6 +69,15 @@ func TestValidate(t *testing.T) {
 			actualError := Validate(tt.in)
 			if tt.expectedErr != nil {
 				require.EqualError(t, actualError, tt.expectedErr.Error())
+
+				var eApp *AppError
+				var eValidate ValidationErrors
+				if errors.As(tt.expectedErr, &eApp) {
+					require.Equal(t, errors.As(actualError, &eApp), true)
+				} else {
+					require.Equal(t, errors.As(actualError, &eValidate), true)
+				}
+
 			} else {
 				require.Nil(t, actualError)
 			}

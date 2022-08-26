@@ -23,6 +23,14 @@ func (v ValidationErrors) Error() string {
 	return sb.String()
 }
 
+type AppError struct {
+	Err error
+}
+
+func (r AppError) Error() string {
+	return fmt.Sprintf("Err: %s", r.Err)
+}
+
 func checkLenString(validationErrors *ValidationErrors, fieldValue *reflect.Value, fieldType *reflect.StructField, validatorName string, validatorValue string) {
 	if validatorName != "len" {
 		return
@@ -70,6 +78,5 @@ func Validate(v interface{}) error {
 		return validationErrors
 
 	}
-	fmt.Println("unsupported type")
-	return nil
+	return &AppError{Err: errors.New("v not struct")}
 }
