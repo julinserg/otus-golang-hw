@@ -121,6 +121,39 @@ func checkIntContainsInSubSet(fieldValue *reflect.Value, validatorName string, v
 
 func Validate(v interface{}) error {
 	var validationErrors ValidationErrors
+
+	checkInt := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) bool {
+		if !checkIntMatchMin(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchMin})
+			return false
+		}
+		if !checkIntMatchMax(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchMax})
+			return false
+		}
+		if !checkIntContainsInSubSet(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotContainsInt})
+			return false
+		}
+		return true
+	}
+
+	checkString := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) bool {
+		if !checkStringLen(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorBadLength})
+			return false
+		}
+		if !checkStringContainsInSubSet(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotContainsString})
+			return false
+		}
+		if !checkStringMatchRegexp(fieldValue, validatorName, validatorValue) {
+			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchRegexp})
+			return false
+		}
+		return true
+	}
+
 	if reflect.ValueOf(v).Kind() == reflect.Struct {
 		structValue := reflect.ValueOf(v)
 		structType := reflect.TypeOf(v)
@@ -139,26 +172,32 @@ func Validate(v interface{}) error {
 					fmt.Println("panic error")
 					continue
 				}
+
 				switch fieldValue.Kind() {
 				case reflect.Int:
-					if !checkIntMatchMin(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorNotMatchMin})
-					}
-					if !checkIntMatchMax(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorNotMatchMax})
-					}
-					if !checkIntContainsInSubSet(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorNotContainsInt})
-					}
+					checkInt(&fieldValue, argList[0], argList[1], fieldType.Name)
 				case reflect.String:
-					if !checkStringLen(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorBadLength})
-					}
-					if !checkStringContainsInSubSet(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorNotContainsString})
-					}
-					if !checkStringMatchRegexp(&fieldValue, argList[0], argList[1]) {
-						validationErrors = append(validationErrors, ValidationError{Field: fieldType.Name, Err: ValidateErrorNotMatchRegexp})
+					checkString(&fieldValue, argList[0], argList[1], fieldType.Name)
+				case reflect.Slice:
+				L:
+					for i := 0; i < fieldValue.Len(); i++ {
+						sliceValue := fieldValue.Index(i)
+						fmt.Println(sliceValue)
+						switch sliceValue.Kind() {
+						case reflect.Int:
+							if !checkInt(&sliceValue, argList[0], argList[1], fieldType.Name) {
+								fmt.Println("break 1")
+								break L
+							}
+						case reflect.String:
+							if !checkString(&sliceValue, argList[0], argList[1], fieldType.Name) {
+								fmt.Println("break 2")
+								break L
+							}
+						default:
+							fmt.Println("Unsupported type")
+							continue
+						}
 					}
 				default:
 					fmt.Println("Unsupported type")

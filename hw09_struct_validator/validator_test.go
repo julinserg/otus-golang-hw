@@ -57,6 +57,15 @@ type (
 	StructContainsInt struct {
 		Variable int `validate:"in:11,12"`
 	}
+
+	StructInStringInt struct {
+		Variable1 int    `validate:"in:11,12"`
+		Variable2 string `validate:"in:foo,bar"`
+	}
+
+	StructSliceInt struct {
+		VariableSlice []int `validate:"in:11,12"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -139,6 +148,20 @@ func TestValidate(t *testing.T) {
 				Variable: 11,
 			},
 			expectedErr: nil,
+		},
+		{
+			in: StructInStringInt{
+				Variable1: 45,
+				Variable2: "45",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable1", Err: ValidateErrorNotContainsInt},
+				ValidationError{Field: "Variable2", Err: ValidateErrorNotContainsString}},
+		},
+		{
+			in: StructSliceInt{
+				VariableSlice: []int{77, 78},
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "VariableSlice", Err: ValidateErrorNotContainsInt}},
 		},
 	}
 
