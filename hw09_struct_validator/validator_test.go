@@ -37,6 +37,26 @@ type (
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
 	}
+
+	StructContainsString struct {
+		Variable string `validate:"in:foo,bar"`
+	}
+
+	StructRegexpMatch struct {
+		Variable string `validate:"regexp:\\d+"`
+	}
+
+	StructMatchMin struct {
+		Variable int `validate:"min:18"`
+	}
+
+	StructMatchMax struct {
+		Variable int `validate:"max:45"`
+	}
+
+	StructContainsInt struct {
+		Variable int `validate:"in:11,12"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -48,7 +68,7 @@ func TestValidate(t *testing.T) {
 			in: App{
 				Version: "26.08.2022",
 			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: errors.New("bad length")}},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: ValidateErrorBadLength}},
 		},
 		{
 			in: App{
@@ -59,6 +79,66 @@ func TestValidate(t *testing.T) {
 		{
 			in:          "struct",
 			expectedErr: &AppError{Err: errors.New("v not struct")},
+		},
+		{
+			in: StructContainsString{
+				Variable: "qwerty",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsString}},
+		},
+		{
+			in: StructContainsString{
+				Variable: "foo",
+			},
+			expectedErr: nil,
+		},
+		{
+			in: StructRegexpMatch{
+				Variable: "123",
+			},
+			expectedErr: nil,
+		},
+		{
+			in: StructRegexpMatch{
+				Variable: "yyy",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchRegexp}},
+		},
+		{
+			in: StructMatchMin{
+				Variable: 20,
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchMin}},
+		},
+		{
+			in: StructMatchMin{
+				Variable: 18,
+			},
+			expectedErr: nil,
+		},
+		{
+			in: StructMatchMax{
+				Variable: 60,
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchMax}},
+		},
+		{
+			in: StructMatchMax{
+				Variable: 45,
+			},
+			expectedErr: nil,
+		},
+		{
+			in: StructContainsInt{
+				Variable: 78,
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsInt}},
+		},
+		{
+			in: StructContainsInt{
+				Variable: 11,
+			},
+			expectedErr: nil,
 		},
 	}
 
