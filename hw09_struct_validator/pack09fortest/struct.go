@@ -5,8 +5,7 @@ type User09 struct {
 	name string `validate:"len:5"`
 }
 
-//lint:ignore U1000 Ignore unused function temporarily for test
-func main() {
+func Main() {
 	st := &User09{ID: "1", name: "12"}
 	_ = st.name
 }
