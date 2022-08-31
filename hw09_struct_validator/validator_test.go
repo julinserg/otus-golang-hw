@@ -66,6 +66,18 @@ type (
 	StructSliceInt struct {
 		VariableSlice []int `validate:"in:11,12"`
 	}
+
+	StructMultiValidator struct {
+		Variable string `validate:"in:foo,bar|len:3"`
+	}
+
+	StructPrivate struct {
+		variable string `validate:"len:3"`
+	}
+
+	StructBadSeparator struct {
+		Variable string `validate:"len-3"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -73,22 +85,6 @@ func TestValidate(t *testing.T) {
 		in          interface{}
 		expectedErr error
 	}{
-		{
-			in: App{
-				Version: "26.08.2022",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: ValidateErrorBadLength}},
-		},
-		{
-			in: App{
-				Version: "26.08",
-			},
-			expectedErr: nil,
-		},
-		{
-			in:          "struct",
-			expectedErr: &AppError{Err: errors.New("v not struct")},
-		},
 		{
 			in: StructContainsString{
 				Variable: "qwerty",
@@ -115,7 +111,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			in: StructMatchMin{
-				Variable: 20,
+				Variable: 12,
 			},
 			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchMin}},
 		},
@@ -161,7 +157,98 @@ func TestValidate(t *testing.T) {
 			in: StructSliceInt{
 				VariableSlice: []int{77, 78},
 			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "VariableSlice", Err: ValidateErrorNotContainsInt}},
+			expectedErr: &ValidationErrors{ValidationError{Field: "VariableSlice index 0", Err: ValidateErrorNotContainsInt},
+				ValidationError{Field: "VariableSlice index 1", Err: ValidateErrorNotContainsInt}},
+		},
+		{
+			in: StructMultiValidator{
+				Variable: "foo",
+			},
+			expectedErr: nil,
+		},
+		{
+			in: StructMultiValidator{
+				Variable: "fooo",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsString},
+				ValidationError{Field: "Variable", Err: ValidateErrorBadLength}},
+		},
+		{
+			in: App{
+				Version: "26.08.2022",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: ValidateErrorBadLength}},
+		},
+		{
+			in: App{
+				Version: "26.08",
+			},
+			expectedErr: nil,
+		},
+		{
+			in: Token{
+				Header:    []byte{1, 2, 3},
+				Payload:   []byte{4, 5, 6},
+				Signature: []byte{7, 8, 9},
+			},
+			expectedErr: nil,
+		},
+		{
+			in: Response{
+				Code: 200,
+				Body: "Body",
+			},
+			expectedErr: nil,
+		},
+		{
+			in: Response{
+				Code: 300,
+				Body: "Body",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "Code", Err: ValidateErrorNotContainsInt}},
+		},
+		{
+			in: User{
+				ID:     "0a4ba8cd-b4a3-40ce-87bf-ad059468e00c",
+				Name:   "name",
+				Age:    18,
+				Email:  "email@email.com",
+				Role:   "admin",
+				Phones: []string{"+0123456789"},
+			},
+			expectedErr: nil,
+		},
+		{
+			in: User{
+				ID:     "0a4ba8cd-b4a3-40ce-87bfad059468e00c",
+				Name:   "name",
+				Age:    51,
+				Email:  "email@@email.com",
+				Role:   "admin123",
+				Phones: []string{"+0123456789", "+01234567890"},
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "ID", Err: ValidateErrorBadLength},
+				ValidationError{Field: "Age", Err: ValidateErrorNotMatchMax},
+				ValidationError{Field: "Email", Err: ValidateErrorNotMatchRegexp},
+				ValidationError{Field: "Role", Err: ValidateErrorNotContainsString},
+				ValidationError{Field: "Phones index 1", Err: ValidateErrorBadLength},
+			},
+		},
+		{
+			in:          "struct",
+			expectedErr: &AppError{Err: AppErrorNotStruct},
+		},
+		{
+			in: StructPrivate{
+				variable: "fooo",
+			},
+			expectedErr: &ValidationErrors{ValidationError{Field: "variable", Err: ValidateErrorBadLength}},
+		},
+		{
+			in: StructBadSeparator{
+				Variable: "fooo",
+			},
+			expectedErr: &AppError{Err: AppErrorBadValidatorSeparator},
 		},
 	}
 
