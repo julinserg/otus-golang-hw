@@ -200,18 +200,23 @@ func checkString(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	validatorName string, validatorValue string, fieldName string,
 ) error {
-	switch fieldValue.Kind() {
-	case reflect.Int:
+	typeIsSupported := false
+	if fieldValue.Kind() == reflect.Int {
+		typeIsSupported = true
 		err := checkInt(validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
 		}
-	case reflect.String:
+	}
+	if fieldValue.Kind() == reflect.String {
+		typeIsSupported = true
 		err := checkString(validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
 		}
-	case reflect.Slice:
+	}
+	if fieldValue.Kind() == reflect.Slice {
+		typeIsSupported = true
 		for i := 0; i < fieldValue.Len(); i++ {
 			sliceValue := fieldValue.Index(i)
 			err := checkFields(validationErrors, &sliceValue, validatorName, validatorValue, fieldName+" index "+strconv.Itoa(i))
@@ -219,7 +224,8 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 				return err
 			}
 		}
-	default:
+	}
+	if !typeIsSupported {
 		return &AppError{Err: ErrAppTypeNotSupported}
 	}
 	return nil
