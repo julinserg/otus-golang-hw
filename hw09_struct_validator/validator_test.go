@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fixme_my_friend/hw09_struct_validator/pack09"
+	"github.com/fixme_my_friend/hw09_struct_validator/pack09fortest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -256,7 +256,7 @@ var tests = []struct {
 		expectedErr: &AppError{Err: ErrAppNotStruct},
 	},
 	{
-		in: pack09.User09{
+		in: pack09fortest.User09{
 			ID: "0a4ba8cd-b4a3-40ce-87bf-ad059468e00c",
 		},
 		expectedErr: nil,
