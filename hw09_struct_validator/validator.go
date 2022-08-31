@@ -200,7 +200,6 @@ func checkString(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	validatorName string, validatorValue string, fieldName string,
 ) error {
-
 	switch fieldValue.Kind() {
 	case reflect.Int:
 		err := checkInt(validationErrors, fieldValue, validatorName, validatorValue, fieldName)
