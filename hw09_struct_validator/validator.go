@@ -26,10 +26,25 @@ var (
 )
 
 var (
-	ErrAppNotStruct             = errors.New("v not struct")
-	ErrAppBadValidatorSeparator = errors.New("bad validator separator")
-	ErrAppTypeNotSupported      = errors.New("type not supported")
+	ErrAppNotStruct                = errors.New("v not struct")
+	ErrAppBadValidatorSeparator    = errors.New("bad validator separator")
+	ErrAppTypeNotSupported         = errors.New("type not supported")
+	ErrAppValidatorTagNotSupported = errors.New("validator tag not supported")
 )
+
+var (
+	validatorTagsForString = []string{"len", "regexp", "in"}
+	validatorTagsForInt    = []string{"min", "max", "in"}
+)
+
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
 
 func (v ValidationErrors) Error() string {
 	var sb strings.Builder
@@ -40,11 +55,15 @@ func (v ValidationErrors) Error() string {
 }
 
 type AppError struct {
-	Err error
+	Info string
+	Err  error
 }
 
 func (r AppError) Error() string {
-	return fmt.Sprintf("Err: %s", r.Err)
+	if len(r.Info) == 0 {
+		return fmt.Sprintf("Err: %s", r.Err)
+	}
+	return fmt.Sprintf("Err: %s - %s", r.Info, r.Err)
 }
 
 func checkStringLen(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
@@ -66,14 +85,7 @@ func checkStringContainsInSubSet(fieldValue *reflect.Value, validatorName string
 		return nil
 	}
 	subsetList := strings.Split(validatorValue, ",")
-	isConatain := false
-	for _, st := range subsetList {
-		if st == fieldValue.String() {
-			isConatain = true
-			break
-		}
-	}
-	if !isConatain {
+	if !containsString(subsetList, fieldValue.String()) {
 		return ErrValidateNotContainsString
 	}
 	return nil
@@ -203,6 +215,10 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	typeIsSupported := false
 	if fieldValue.Kind() == reflect.Int {
 		typeIsSupported = true
+		if !containsString(validatorTagsForInt, validatorName) {
+			return &AppError{Err: ErrAppValidatorTagNotSupported, Info: validatorName}
+		}
+
 		err := checkInt(validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
@@ -210,6 +226,9 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	}
 	if fieldValue.Kind() == reflect.String {
 		typeIsSupported = true
+		if !containsString(validatorTagsForString, validatorName) {
+			return &AppError{Err: ErrAppValidatorTagNotSupported, Info: validatorName}
+		}
 		err := checkString(validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
@@ -226,7 +245,7 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 		}
 	}
 	if !typeIsSupported {
-		return &AppError{Err: ErrAppTypeNotSupported}
+		return &AppError{Err: ErrAppTypeNotSupported, Info: fieldValue.Kind().String()}
 	}
 	return nil
 }
@@ -240,6 +259,10 @@ func Validate(v interface{}) error {
 		for i := 0; i < structValue.NumField(); i++ {
 			fieldValue := structValue.Field(i)
 			fieldType := structType.Field(i)
+			// check only public fields
+			if !fieldValue.CanInterface() {
+				continue
+			}
 			tag := fieldType.Tag
 			validate, ok := tag.Lookup("validate")
 			if !ok {

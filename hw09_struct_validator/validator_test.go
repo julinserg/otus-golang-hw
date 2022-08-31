@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/fixme_my_friend/hw09_struct_validator/pack09"
 	"github.com/stretchr/testify/require"
 )
 
@@ -71,10 +72,6 @@ type (
 		Variable string `validate:"in:foo,bar|len:3"`
 	}
 
-	StructPrivate struct {
-		variable string `validate:"len:3"`
-	}
-
 	StructBadSeparator struct {
 		Variable string `validate:"len-3"`
 	}
@@ -85,6 +82,10 @@ type (
 
 	StructContainsIntErrorConvert struct {
 		Variable int `validate:"in:aa,bb"`
+	}
+
+	StructBadTag struct {
+		Variable int `validate:"im:11,12"`
 	}
 )
 
@@ -255,10 +256,10 @@ var tests = []struct {
 		expectedErr: &AppError{Err: ErrAppNotStruct},
 	},
 	{
-		in: StructPrivate{
-			variable: "fooo",
+		in: pack09.User09{
+			ID: "0a4ba8cd-b4a3-40ce-87bf-ad059468e00c",
 		},
-		expectedErr: &ValidationErrors{ValidationError{Field: "variable", Err: ErrValidateBadLength}},
+		expectedErr: nil,
 	},
 	{
 		in: StructBadSeparator{
@@ -270,13 +271,19 @@ var tests = []struct {
 		in: StructBadType{
 			Variable: 5.0,
 		},
-		expectedErr: &AppError{Err: ErrAppTypeNotSupported},
+		expectedErr: &AppError{Err: ErrAppTypeNotSupported, Info: "float64"},
 	},
 	{
 		in: StructContainsIntErrorConvert{
 			Variable: 12,
 		},
 		expectedErr: &AppError{Err: errors.New("strconv.Atoi: parsing \"aa\": invalid syntax")},
+	},
+	{
+		in: StructBadTag{
+			Variable: 12,
+		},
+		expectedErr: &AppError{Err: ErrAppValidatorTagNotSupported, Info: "im"},
 	},
 }
 
