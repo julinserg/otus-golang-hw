@@ -25,7 +25,6 @@ var ValidateErrorNotContainsInt = errors.New("not contains (int)")
 
 var AppErrorNotStruct = errors.New("v not struct")
 var AppErrorBadValidatorSeparator = errors.New("bad validator separator")
-var AppErrorConvertStringToInt = errors.New("error convert string to int")
 
 func (v ValidationErrors) Error() string {
 	var sb strings.Builder
@@ -49,7 +48,7 @@ func checkStringLen(fieldValue *reflect.Value, validatorName string, validatorVa
 	}
 	intVar, err := strconv.Atoi(validatorValue)
 	if err != nil {
-		return &AppError{Err: AppErrorConvertStringToInt}
+		return &AppError{Err: err}
 	}
 	if len(fieldValue.String()) != intVar {
 		return ValidateErrorBadLength
@@ -57,9 +56,9 @@ func checkStringLen(fieldValue *reflect.Value, validatorName string, validatorVa
 	return nil
 }
 
-func checkStringContainsInSubSet(fieldValue *reflect.Value, validatorName string, validatorValue string) bool {
+func checkStringContainsInSubSet(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
 	if validatorName != "in" {
-		return true
+		return nil
 	}
 	subsetList := strings.Split(validatorValue, ",")
 	isConatain := false
@@ -69,90 +68,127 @@ func checkStringContainsInSubSet(fieldValue *reflect.Value, validatorName string
 			break
 		}
 	}
-	return isConatain
+	if !isConatain {
+		return ValidateErrorNotContainsString
+	}
+	return nil
 }
 
-func checkStringMatchRegexp(fieldValue *reflect.Value, validatorName string, validatorValue string) bool {
+func checkStringMatchRegexp(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
 	if validatorName != "regexp" {
-		return true
+		return nil
 	}
 	r, err := regexp.Compile(validatorValue)
 	if err != nil {
-		fmt.Println("regexp error")
-		return false
+		return &AppError{Err: err}
 	}
-	return r.MatchString(fieldValue.String())
+	if !r.MatchString(fieldValue.String()) {
+		return ValidateErrorNotMatchRegexp
+	}
+	return nil
 }
 
-func checkIntMatchMin(fieldValue *reflect.Value, validatorName string, validatorValue string) bool {
+func checkIntMatchMin(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
 	if validatorName != "min" {
-		return true
+		return nil
 	}
 	minValue, err := strconv.Atoi(validatorValue)
 	if err != nil {
-		fmt.Println("min error")
-		return false
+		return &AppError{Err: err}
 	}
-	return fieldValue.Int() >= int64(minValue)
+	if !(fieldValue.Int() >= int64(minValue)) {
+		return ValidateErrorNotMatchMin
+	}
+	return nil
 }
 
-func checkIntMatchMax(fieldValue *reflect.Value, validatorName string, validatorValue string) bool {
+func checkIntMatchMax(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
 	if validatorName != "max" {
-		return true
+		return nil
 	}
 	maxValue, err := strconv.Atoi(validatorValue)
 	if err != nil {
-		fmt.Println("error convert string to int")
-		return false
+		return &AppError{Err: err}
 	}
-	return fieldValue.Int() <= int64(maxValue)
+	if !(fieldValue.Int() <= int64(maxValue)) {
+		return ValidateErrorNotMatchMax
+	}
+	return nil
 }
 
-func checkIntContainsInSubSet(fieldValue *reflect.Value, validatorName string, validatorValue string) bool {
+func checkIntContainsInSubSet(fieldValue *reflect.Value, validatorName string, validatorValue string) error {
 	if validatorName != "in" {
-		return true
+		return nil
 	}
 	subsetList := strings.Split(validatorValue, ",")
 	isConatain := false
 	for _, st := range subsetList {
 		stInt, err := strconv.Atoi(st)
 		if err != nil {
-			fmt.Println("error convert string to int")
-			return false
+			return &AppError{Err: err}
 		}
 		if int64(stInt) == fieldValue.Int() {
 			isConatain = true
 			break
 		}
 	}
-	return isConatain
+	if !isConatain {
+		return ValidateErrorNotContainsInt
+	}
+	return nil
 }
 
 func Validate(v interface{}) error {
 	var validationErrors ValidationErrors
 
-	checkInt := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) {
-		if !checkIntMatchMin(fieldValue, validatorName, validatorValue) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchMin})
+	checkInt := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) error {
+		if err := checkIntMatchMin(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorNotMatchMin) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
-		if !checkIntMatchMax(fieldValue, validatorName, validatorValue) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchMax})
+		if err := checkIntMatchMax(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorNotMatchMax) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
-		if !checkIntContainsInSubSet(fieldValue, validatorName, validatorValue) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotContainsInt})
+		if err := checkIntContainsInSubSet(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorNotContainsInt) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
+		return nil
 	}
 
-	checkString := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) {
-		if err := checkStringLen(fieldValue, validatorName, validatorValue); err != nil && errors.Is(err, ValidateErrorBadLength) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+	checkString := func(fieldValue *reflect.Value, validatorName string, validatorValue string, varName string) error {
+		if err := checkStringLen(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorBadLength) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
-		if !checkStringContainsInSubSet(fieldValue, validatorName, validatorValue) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotContainsString})
+		if err := checkStringContainsInSubSet(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorNotContainsString) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
-		if !checkStringMatchRegexp(fieldValue, validatorName, validatorValue) {
-			validationErrors = append(validationErrors, ValidationError{Field: varName, Err: ValidateErrorNotMatchRegexp})
+		if err := checkStringMatchRegexp(fieldValue, validatorName, validatorValue); err != nil {
+			if errors.Is(err, ValidateErrorNotMatchRegexp) {
+				validationErrors = append(validationErrors, ValidationError{Field: varName, Err: err})
+			} else {
+				return err
+			}
 		}
+		return nil
 	}
 
 	var checkFields func(fieldValue *reflect.Value, validatorName string, validatorValue string, fieldName string) bool
