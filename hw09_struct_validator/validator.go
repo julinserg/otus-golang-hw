@@ -25,6 +25,7 @@ var ValidateErrorNotContainsInt = errors.New("not contains (int)")
 
 var AppErrorNotStruct = errors.New("v not struct")
 var AppErrorBadValidatorSeparator = errors.New("bad validator separator")
+var AppErrorTypeNotSupported = errors.New("type not supported")
 
 func (v ValidationErrors) Error() string {
 	var sb strings.Builder
@@ -191,24 +192,33 @@ func Validate(v interface{}) error {
 		return nil
 	}
 
-	var checkFields func(fieldValue *reflect.Value, validatorName string, validatorValue string, fieldName string) bool
+	var checkFields func(fieldValue *reflect.Value, validatorName string, validatorValue string, fieldName string) error
 
-	checkFields = func(fieldValue *reflect.Value, validatorName string, validatorValue string, fieldName string) bool {
+	checkFields = func(fieldValue *reflect.Value, validatorName string, validatorValue string, fieldName string) error {
 		switch fieldValue.Kind() {
 		case reflect.Int:
-			checkInt(fieldValue, validatorName, validatorValue, fieldName)
+			err := checkInt(fieldValue, validatorName, validatorValue, fieldName)
+			if err != nil {
+				return err
+			}
 		case reflect.String:
-			checkString(fieldValue, validatorName, validatorValue, fieldName)
+			err := checkString(fieldValue, validatorName, validatorValue, fieldName)
+			if err != nil {
+				return err
+			}
 		case reflect.Slice:
 			for i := 0; i < fieldValue.Len(); i++ {
 				sliceValue := fieldValue.Index(i)
-				checkFields(&sliceValue, validatorName, validatorValue, fieldName+" index "+strconv.Itoa(i))
+				err := checkFields(&sliceValue, validatorName, validatorValue, fieldName+" index "+strconv.Itoa(i))
+				if err != nil {
+					return err
+				}
 			}
 		default:
-			return false
+			return &AppError{Err: AppErrorTypeNotSupported}
 
 		}
-		return true
+		return nil
 	}
 
 	if reflect.ValueOf(v).Kind() == reflect.Struct {
@@ -228,8 +238,9 @@ func Validate(v interface{}) error {
 				if len(argList) < 2 {
 					return &AppError{Err: AppErrorBadValidatorSeparator}
 				}
-				if !checkFields(&fieldValue, argList[0], argList[1], fieldType.Name) {
-					continue
+				err := checkFields(&fieldValue, argList[0], argList[1], fieldType.Name)
+				if err != nil {
+					return err
 				}
 			}
 		}

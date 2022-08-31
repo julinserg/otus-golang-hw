@@ -78,6 +78,14 @@ type (
 	StructBadSeparator struct {
 		Variable string `validate:"len-3"`
 	}
+
+	StructBadType struct {
+		Variable float64 `validate:"min:3"`
+	}
+
+	StructContainsIntErrorConvert struct {
+		Variable int `validate:"in:aa,bb"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -249,6 +257,18 @@ func TestValidate(t *testing.T) {
 				Variable: "fooo",
 			},
 			expectedErr: &AppError{Err: AppErrorBadValidatorSeparator},
+		},
+		{
+			in: StructBadType{
+				Variable: 5.0,
+			},
+			expectedErr: &AppError{Err: AppErrorTypeNotSupported},
+		},
+		{
+			in: StructContainsIntErrorConvert{
+				Variable: 12,
+			},
+			expectedErr: &AppError{Err: errors.New("strconv.Atoi: parsing \"aa\": invalid syntax")},
 		},
 	}
 
