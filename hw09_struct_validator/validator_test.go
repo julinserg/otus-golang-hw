@@ -88,190 +88,199 @@ type (
 	}
 )
 
-func TestValidate(t *testing.T) {
-	tests := []struct {
-		in          interface{}
-		expectedErr error
-	}{
-		{
-			in: StructContainsString{
-				Variable: "qwerty",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsString}},
+var tests = []struct {
+	in          interface{}
+	expectedErr error
+}{
+	{
+		in: StructContainsString{
+			Variable: "qwerty",
 		},
-		{
-			in: StructContainsString{
-				Variable: "foo",
-			},
-			expectedErr: nil,
+		expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ErrValidateNotContainsString}},
+	},
+	{
+		in: StructContainsString{
+			Variable: "foo",
 		},
-		{
-			in: StructRegexpMatch{
-				Variable: "123",
-			},
-			expectedErr: nil,
+		expectedErr: nil,
+	},
+	{
+		in: StructRegexpMatch{
+			Variable: "123",
 		},
-		{
-			in: StructRegexpMatch{
-				Variable: "yyy",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchRegexp}},
+		expectedErr: nil,
+	},
+	{
+		in: StructRegexpMatch{
+			Variable: "yyy",
 		},
-		{
-			in: StructMatchMin{
-				Variable: 12,
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchMin}},
+		expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ErrValidateNotMatchRegexp}},
+	},
+	{
+		in: StructMatchMin{
+			Variable: 12,
 		},
-		{
-			in: StructMatchMin{
-				Variable: 18,
-			},
-			expectedErr: nil,
+		expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ErrValidateNotMatchMin}},
+	},
+	{
+		in: StructMatchMin{
+			Variable: 18,
 		},
-		{
-			in: StructMatchMax{
-				Variable: 60,
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotMatchMax}},
+		expectedErr: nil,
+	},
+	{
+		in: StructMatchMax{
+			Variable: 60,
 		},
-		{
-			in: StructMatchMax{
-				Variable: 45,
-			},
-			expectedErr: nil,
+		expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ErrValidateNotMatchMax}},
+	},
+	{
+		in: StructMatchMax{
+			Variable: 45,
 		},
-		{
-			in: StructContainsInt{
-				Variable: 78,
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsInt}},
+		expectedErr: nil,
+	},
+	{
+		in: StructContainsInt{
+			Variable: 78,
 		},
-		{
-			in: StructContainsInt{
-				Variable: 11,
-			},
-			expectedErr: nil,
+		expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ErrValidateNotContainsInt}},
+	},
+	{
+		in: StructContainsInt{
+			Variable: 11,
 		},
-		{
-			in: StructInStringInt{
-				Variable1: 45,
-				Variable2: "45",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable1", Err: ValidateErrorNotContainsInt},
-				ValidationError{Field: "Variable2", Err: ValidateErrorNotContainsString}},
+		expectedErr: nil,
+	},
+	{
+		in: StructInStringInt{
+			Variable1: 45,
+			Variable2: "45",
 		},
-		{
-			in: StructSliceInt{
-				VariableSlice: []int{77, 78},
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "VariableSlice index 0", Err: ValidateErrorNotContainsInt},
-				ValidationError{Field: "VariableSlice index 1", Err: ValidateErrorNotContainsInt}},
+		expectedErr: &ValidationErrors{
+			ValidationError{Field: "Variable1", Err: ErrValidateNotContainsInt},
+			ValidationError{Field: "Variable2", Err: ErrValidateNotContainsString},
 		},
-		{
-			in: StructMultiValidator{
-				Variable: "foo",
-			},
-			expectedErr: nil,
+	},
+	{
+		in: StructSliceInt{
+			VariableSlice: []int{77, 78},
 		},
-		{
-			in: StructMultiValidator{
-				Variable: "fooo",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Variable", Err: ValidateErrorNotContainsString},
-				ValidationError{Field: "Variable", Err: ValidateErrorBadLength}},
+		expectedErr: &ValidationErrors{
+			ValidationError{Field: "VariableSlice index 0", Err: ErrValidateNotContainsInt},
+			ValidationError{Field: "VariableSlice index 1", Err: ErrValidateNotContainsInt},
 		},
-		{
-			in: App{
-				Version: "26.08.2022",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: ValidateErrorBadLength}},
+	},
+	{
+		in: StructMultiValidator{
+			Variable: "foo",
 		},
-		{
-			in: App{
-				Version: "26.08",
-			},
-			expectedErr: nil,
+		expectedErr: nil,
+	},
+	{
+		in: StructMultiValidator{
+			Variable: "fooo",
 		},
-		{
-			in: Token{
-				Header:    []byte{1, 2, 3},
-				Payload:   []byte{4, 5, 6},
-				Signature: []byte{7, 8, 9},
-			},
-			expectedErr: nil,
+		expectedErr: &ValidationErrors{
+			ValidationError{Field: "Variable", Err: ErrValidateNotContainsString},
+			ValidationError{Field: "Variable", Err: ErrValidateBadLength},
 		},
-		{
-			in: Response{
-				Code: 200,
-				Body: "Body",
-			},
-			expectedErr: nil,
+	},
+	{
+		in: App{
+			Version: "26.08.2022",
 		},
-		{
-			in: Response{
-				Code: 300,
-				Body: "Body",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "Code", Err: ValidateErrorNotContainsInt}},
+		expectedErr: &ValidationErrors{ValidationError{Field: "Version", Err: ErrValidateBadLength}},
+	},
+	{
+		in: App{
+			Version: "26.08",
 		},
-		{
-			in: User{
-				ID:     "0a4ba8cd-b4a3-40ce-87bf-ad059468e00c",
-				Name:   "name",
-				Age:    18,
-				Email:  "email@email.com",
-				Role:   "admin",
-				Phones: []string{"+0123456789"},
-			},
-			expectedErr: nil,
+		expectedErr: nil,
+	},
+	{
+		in: Token{
+			Header:    []byte{1, 2, 3},
+			Payload:   []byte{4, 5, 6},
+			Signature: []byte{7, 8, 9},
 		},
-		{
-			in: User{
-				ID:     "0a4ba8cd-b4a3-40ce-87bfad059468e00c",
-				Name:   "name",
-				Age:    51,
-				Email:  "email@@email.com",
-				Role:   "admin123",
-				Phones: []string{"+0123456789", "+01234567890"},
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "ID", Err: ValidateErrorBadLength},
-				ValidationError{Field: "Age", Err: ValidateErrorNotMatchMax},
-				ValidationError{Field: "Email", Err: ValidateErrorNotMatchRegexp},
-				ValidationError{Field: "Role", Err: ValidateErrorNotContainsString},
-				ValidationError{Field: "Phones index 1", Err: ValidateErrorBadLength},
-			},
+		expectedErr: nil,
+	},
+	{
+		in: Response{
+			Code: 200,
+			Body: "Body",
 		},
-		{
-			in:          "struct",
-			expectedErr: &AppError{Err: AppErrorNotStruct},
+		expectedErr: nil,
+	},
+	{
+		in: Response{
+			Code: 300,
+			Body: "Body",
 		},
-		{
-			in: StructPrivate{
-				variable: "fooo",
-			},
-			expectedErr: &ValidationErrors{ValidationError{Field: "variable", Err: ValidateErrorBadLength}},
+		expectedErr: &ValidationErrors{ValidationError{Field: "Code", Err: ErrValidateNotContainsInt}},
+	},
+	{
+		in: User{
+			ID:     "0a4ba8cd-b4a3-40ce-87bf-ad059468e00c",
+			Name:   "name",
+			Age:    18,
+			Email:  "email@email.com",
+			Role:   "admin",
+			Phones: []string{"+0123456789"},
+			meta:   nil,
 		},
-		{
-			in: StructBadSeparator{
-				Variable: "fooo",
-			},
-			expectedErr: &AppError{Err: AppErrorBadValidatorSeparator},
+		expectedErr: nil,
+	},
+	{
+		in: User{
+			ID:     "0a4ba8cd-b4a3-40ce-87bfad059468e00c",
+			Name:   "name",
+			Age:    51,
+			Email:  "email@@email.com",
+			Role:   "admin123",
+			Phones: []string{"+0123456789", "+01234567890"},
+			meta:   nil,
 		},
-		{
-			in: StructBadType{
-				Variable: 5.0,
-			},
-			expectedErr: &AppError{Err: AppErrorTypeNotSupported},
+		expectedErr: &ValidationErrors{
+			ValidationError{Field: "ID", Err: ErrValidateBadLength},
+			ValidationError{Field: "Age", Err: ErrValidateNotMatchMax},
+			ValidationError{Field: "Email", Err: ErrValidateNotMatchRegexp},
+			ValidationError{Field: "Role", Err: ErrValidateNotContainsString},
+			ValidationError{Field: "Phones index 1", Err: ErrValidateBadLength},
 		},
-		{
-			in: StructContainsIntErrorConvert{
-				Variable: 12,
-			},
-			expectedErr: &AppError{Err: errors.New("strconv.Atoi: parsing \"aa\": invalid syntax")},
+	},
+	{
+		in:          "struct",
+		expectedErr: &AppError{Err: ErrAppNotStruct},
+	},
+	{
+		in: StructPrivate{
+			variable: "fooo",
 		},
-	}
+		expectedErr: &ValidationErrors{ValidationError{Field: "variable", Err: ErrValidateBadLength}},
+	},
+	{
+		in: StructBadSeparator{
+			Variable: "fooo",
+		},
+		expectedErr: &AppError{Err: ErrAppBadValidatorSeparator},
+	},
+	{
+		in: StructBadType{
+			Variable: 5.0,
+		},
+		expectedErr: &AppError{Err: ErrAppTypeNotSupported},
+	},
+	{
+		in: StructContainsIntErrorConvert{
+			Variable: 12,
+		},
+		expectedErr: &AppError{Err: errors.New("strconv.Atoi: parsing \"aa\": invalid syntax")},
+	},
+}
 
+func TestValidate(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tt := tt
@@ -287,11 +296,9 @@ func TestValidate(t *testing.T) {
 				} else {
 					require.Equal(t, errors.As(actualError, &eValidate), true)
 				}
-
 			} else {
 				require.Nil(t, actualError)
 			}
-
 		})
 	}
 }
