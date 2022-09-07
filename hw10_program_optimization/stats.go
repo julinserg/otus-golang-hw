@@ -1,12 +1,12 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"regexp"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type User struct {
@@ -22,46 +22,43 @@ type User struct {
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, err := getUsers(r)
+	u, num, err := getUsers(r)
 	if err != nil {
 		return nil, fmt.Errorf("get users error: %w", err)
 	}
-	return countDomains(u, domain)
+	result := make(DomainStat, num)
+	err = countDomains(&u, num, &result, domain)
+	return result, err
 }
 
 type users [100_000]User
 
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return
-	}
+func getUsers(r io.Reader) (result users, numUsers int, err error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	scanner := bufio.NewScanner(r)
 
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
-		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
+	user := &User{}
+	for scanner.Scan() {
+		content := scanner.Text()
+		*user = User{}
+		if err = json.Unmarshal([]byte(content), user); err != nil {
+			continue
 		}
-		result[i] = user
+		result[numUsers] = *user
+		numUsers++
 	}
 	return
 }
 
-func countDomains(u users, domain string) (DomainStat, error) {
-	result := make(DomainStat)
-
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
-		}
-
+func countDomains(u *users, numUsers int, result *DomainStat, domain string) error {
+	dotDomain := "." + domain
+	for idx := 0; idx < numUsers; idx++ {
+		matched := strings.Contains(u[idx].Email, dotDomain)
 		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+			indFindStr := strings.Index(u[idx].Email, "@")
+			str := strings.ToLower(u[idx].Email[indFindStr+1 : len(u[idx].Email)])
+			(*result)[str] += 1
 		}
 	}
-	return result, nil
+	return nil
 }
