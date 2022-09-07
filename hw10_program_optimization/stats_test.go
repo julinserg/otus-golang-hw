@@ -4,6 +4,7 @@
 package hw10programoptimization
 
 import (
+	"archive/zip"
 	"bytes"
 	"testing"
 
@@ -39,7 +40,7 @@ func TestGetDomainStat(t *testing.T) {
 	})
 }
 
-func BenchmarkGetDomainStat(b *testing.B) {
+/*func BenchmarkGetDomainStat(b *testing.B) {
 	data := `{"Id":1,"Name":"Howard Mendoza","Username":"0Oliver","Email":"aliquid_qui_ea@Browsedrive.gov","Phone":"6-866-899-36-79","Password":"InAQJvsq","Address":"Blackbird Place 25"}
 {"Id":2,"Name":"Jesse Vasquez","Username":"qRichardson","Email":"mLynch@broWsecat.com","Phone":"9-373-949-64-00","Password":"SiZLeNSGn","Address":"Fulton Hill 80"}
 {"Id":3,"Name":"Clarence Olson","Username":"RachelAdams","Email":"RoseSmith@Browsecat.com","Phone":"988-48-97","Password":"71kuz3gA5w","Address":"Monterey Park 39"}
@@ -50,5 +51,14 @@ func BenchmarkGetDomainStat(b *testing.B) {
 		GetDomainStat(bytes.NewBufferString(data), "com")
 		GetDomainStat(bytes.NewBufferString(data), "gov")
 		GetDomainStat(bytes.NewBufferString(data), "unknown")
+	}
+}*/
+
+func BenchmarkGetDomainStatTimeAndMemory(b *testing.B) {
+	r, _ := zip.OpenReader("testdata/users.dat.zip")
+	defer r.Close()
+	data, _ := r.File[0].Open()
+	for i := 0; i < b.N; i++ {
+		GetDomainStat(data, "biz")
 	}
 }

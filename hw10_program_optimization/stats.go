@@ -22,43 +22,22 @@ type User struct {
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, num, err := getUsers(r)
-	if err != nil {
-		return nil, fmt.Errorf("get users error: %w", err)
-	}
-	result := make(DomainStat, num)
-	err = countDomains(&u, num, &result, domain)
-	return result, err
-}
-
-type users [100_000]User
-
-func getUsers(r io.Reader) (result users, numUsers int, err error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	result := make(DomainStat)
 	scanner := bufio.NewScanner(r)
-
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	dotDomain := "." + domain
 	user := &User{}
 	for scanner.Scan() {
-		content := scanner.Text()
 		*user = User{}
-		if err = json.Unmarshal([]byte(content), user); err != nil {
-			continue
+		if err := json.Unmarshal(scanner.Bytes(), user); err != nil {
+			return nil, fmt.Errorf("get users error: %w", err)
 		}
-		result[numUsers] = *user
-		numUsers++
-	}
-	return
-}
-
-func countDomains(u *users, numUsers int, result *DomainStat, domain string) error {
-	dotDomain := "." + domain
-	for idx := 0; idx < numUsers; idx++ {
-		matched := strings.Contains(u[idx].Email, dotDomain)
+		matched := strings.Contains(user.Email, dotDomain)
 		if matched {
-			indFindStr := strings.Index(u[idx].Email, "@")
-			str := strings.ToLower(u[idx].Email[indFindStr+1 : len(u[idx].Email)])
-			(*result)[str] += 1
+			indFindStr := strings.Index(user.Email, "@")
+			str := strings.ToLower(user.Email[indFindStr+1 : len(user.Email)])
+			result[str]++
 		}
 	}
-	return nil
+	return result, scanner.Err()
 }
