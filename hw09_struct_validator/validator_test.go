@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fixme_my_friend/hw09_struct_validator/pack09fortest"
+	"github.com/julinserg/go_home_work/hw09_struct_validator/pack09fortest"
 	"github.com/stretchr/testify/require"
 )
 

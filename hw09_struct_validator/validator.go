@@ -108,7 +108,7 @@ func (c *CheckIntMatchMin) check(fieldValue *reflect.Value, validatorValue strin
 	if err != nil {
 		return &AppError{Err: err}
 	}
-	if !(fieldValue.Int() >= int64(minValue)) {
+	if fieldValue.Int() < int64(minValue) {
 		return ErrValidateNotMatchMin
 	}
 	return nil
@@ -121,7 +121,7 @@ func (c *CheckIntMatchMax) check(fieldValue *reflect.Value, validatorValue strin
 	if err != nil {
 		return &AppError{Err: err}
 	}
-	if !(fieldValue.Int() <= int64(maxValue)) {
+	if fieldValue.Int() > int64(maxValue) {
 		return ErrValidateNotMatchMax
 	}
 	return nil
@@ -165,11 +165,11 @@ var validatorsIntMap = map[string]CheckerAndError{
 	"in":  {&CheckIntContainsInSubSet{}, ErrValidateNotContainsInt},
 }
 
-func checkType(validators *map[string]CheckerAndError, validationErrors *ValidationErrors, fieldValue *reflect.Value,
+func checkType(validators map[string]CheckerAndError, validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	validatorName string, validatorValue string, varName string,
 ) error {
 	validatorExist := false
-	for validName, validChecker := range *validators {
+	for validName, validChecker := range validators {
 		if validatorName == validName {
 			validatorExist = true
 			if err := validChecker.checker.check(fieldValue, validatorValue); err != nil {
@@ -193,14 +193,14 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 	typeIsSupported := false
 	if fieldValue.Kind() == reflect.Int {
 		typeIsSupported = true
-		err := checkType(&validatorsIntMap, validationErrors, fieldValue, validatorName, validatorValue, fieldName)
+		err := checkType(validatorsIntMap, validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
 		}
 	}
 	if fieldValue.Kind() == reflect.String {
 		typeIsSupported = true
-		err := checkType(&validatorsStringMap, validationErrors, fieldValue, validatorName, validatorValue, fieldName)
+		err := checkType(validatorsStringMap, validationErrors, fieldValue, validatorName, validatorValue, fieldName)
 		if err != nil {
 			return err
 		}
@@ -222,36 +222,36 @@ func checkFields(validationErrors *ValidationErrors, fieldValue *reflect.Value,
 }
 
 func Validate(v interface{}) error {
-	var validationErrors ValidationErrors
+	if reflect.ValueOf(v).Kind() != reflect.Struct {
+		return &AppError{Err: ErrAppNotStruct}
+	}
 
-	if reflect.ValueOf(v).Kind() == reflect.Struct {
-		structValue := reflect.ValueOf(v)
-		structType := reflect.TypeOf(v)
-		for i := 0; i < structValue.NumField(); i++ {
-			fieldValue := structValue.Field(i)
-			fieldType := structType.Field(i)
-			// check only public fields
-			if !fieldValue.CanInterface() {
-				continue
+	var validationErrors ValidationErrors
+	structValue := reflect.ValueOf(v)
+	structType := reflect.TypeOf(v)
+	for i := 0; i < structValue.NumField(); i++ {
+		fieldValue := structValue.Field(i)
+		fieldType := structType.Field(i)
+		// check only public fields
+		if !fieldValue.CanInterface() {
+			continue
+		}
+		tag := fieldType.Tag
+		validate, ok := tag.Lookup("validate")
+		if !ok {
+			continue
+		}
+		paramsList := strings.Split(validate, "|")
+		for _, param := range paramsList {
+			argList := strings.Split(param, ":")
+			if len(argList) < 2 {
+				return &AppError{Err: ErrAppBadValidatorSeparator}
 			}
-			tag := fieldType.Tag
-			validate, ok := tag.Lookup("validate")
-			if !ok {
-				continue
-			}
-			paramsList := strings.Split(validate, "|")
-			for _, param := range paramsList {
-				argList := strings.Split(param, ":")
-				if len(argList) < 2 {
-					return &AppError{Err: ErrAppBadValidatorSeparator}
-				}
-				err := checkFields(&validationErrors, &fieldValue, argList[0], argList[1], fieldType.Name)
-				if err != nil {
-					return err
-				}
+			err := checkFields(&validationErrors, &fieldValue, argList[0], argList[1], fieldType.Name)
+			if err != nil {
+				return err
 			}
 		}
-		return validationErrors
 	}
-	return &AppError{Err: ErrAppNotStruct}
+	return validationErrors
 }
