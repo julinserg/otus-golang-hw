@@ -39,7 +39,6 @@ func (tc *TelnetClientImpl) Send() error {
 	if numBytes <= 0 {
 		return nil
 	}
-
 	numBytes, errNet := tc.conn.Write(buffer[:numBytes])
 	if numBytes > 0 {
 		log.Printf("To server %v\n", buffer[:numBytes])
