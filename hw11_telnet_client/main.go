@@ -12,7 +12,12 @@ import (
 func main() {
 	// client := NewTelnetClient("192.168.1.145:4242", 5*time.Second, os.Stdin, os.Stdout)
 	client := NewTelnetClient("127.0.0.1:4242", 5*time.Second, os.Stdin, os.Stdout)
-	defer client.Close()
+	isConnected := false
+	defer func(isConn *bool) {
+		if *isConn {
+			client.Close()
+		}
+	}(&isConnected)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -20,6 +25,7 @@ func main() {
 		log.Printf("Cannot connect: %v \n", err)
 		return
 	}
+	isConnected = true
 	log.Println("Connected")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
