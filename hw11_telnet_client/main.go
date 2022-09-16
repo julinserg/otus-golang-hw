@@ -2,16 +2,27 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"time"
 )
 
+var timeout time.Duration
+
+func init() {
+	flag.DurationVar(&timeout, "timeout", time.Second, "Connection timeout")
+}
+
 func main() {
-	// client := NewTelnetClient("192.168.1.145:4242", 5*time.Second, os.Stdin, os.Stdout)
-	client := NewTelnetClient("localhost:4242", 5*time.Second, os.Stdin, os.Stdout)
+	flag.Parse()
+	if len(os.Args) < 3 {
+		log.Fatalln("ERROR: Set address and port")
+	}
+	client := NewTelnetClient(net.JoinHostPort(os.Args[1], os.Args[2]), timeout, os.Stdin, os.Stdout)
 	isConnected := false
 	defer func(isConn *bool) {
 		if *isConn {
@@ -30,11 +41,14 @@ func main() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			log.Println("'Send goroutine' done")
+			wg.Done()
+		}()
+
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Send goroutine done")
 				return
 			default:
 				err := client.Send()
@@ -43,18 +57,20 @@ func main() {
 					cancel()
 					return
 				}
-				time.Sleep(10 * time.Microsecond)
 			}
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			log.Println("'Receive goroutine' done")
+			wg.Done()
+		}()
+
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Receive goroutine done")
 				return
 			default:
 				err := client.Receive()
@@ -63,7 +79,6 @@ func main() {
 					// cancel()
 					return
 				}
-				time.Sleep(10 * time.Microsecond)
 			}
 		}
 	}()
@@ -72,11 +87,14 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			log.Println("'Wait Ctrl+C press goroutine' done")
+			wg.Done()
+		}()
+
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Wait Ctrl+C press goroutine done")
 				return
 			case <-ctxInterrupt.Done():
 				log.Println("Ctrl+C press")
