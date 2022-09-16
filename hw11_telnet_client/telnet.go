@@ -16,48 +16,86 @@ type TelnetClient interface {
 }
 
 type TelnetClientImpl struct {
-	address string
-	timeout time.Duration
-	in      io.ReadCloser
-	out     io.Writer
-	conn    net.Conn
-	cancel  context.CancelFunc
+	address      string
+	timeout      time.Duration
+	in           io.ReadCloser
+	out          io.Writer
+	conn         net.Conn
+	inputChNet   chan interface{}
+	errorChNet   chan error
+	inputChStdIn chan interface{}
+	errorChStdIn chan error
+}
+
+func reader(r io.Reader, input chan interface{}, errorCh chan error) {
+	for {
+		buffer := make([]byte, 4100)
+		numBytes, err := r.Read(buffer)
+		if err != nil {
+			errorCh <- err
+			return
+		}
+		if numBytes <= 0 {
+			input <- struct{}{}
+			return
+		}
+		input <- buffer[:numBytes]
+	}
 }
 
 func (tc *TelnetClientImpl) Connect() error {
 	var err error
 	tc.conn, err = net.DialTimeout("tcp", tc.address, tc.timeout)
+
+	tc.inputChNet = make(chan interface{})
+	tc.errorChNet = make(chan error)
+	tc.inputChStdIn = make(chan interface{})
+	tc.errorChStdIn = make(chan error)
+
+	go reader(tc.conn, tc.inputChNet, tc.errorChNet)
+	go reader(tc.in, tc.inputChStdIn, tc.errorChStdIn)
+
 	return err
 }
 
 func (tc *TelnetClientImpl) Send() error {
-	buffer := make([]byte, 1024)
-	numBytes, err := tc.in.Read(buffer)
-	if err != nil {
-		return err
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	for {
+		select {
+		case data := <-tc.inputChStdIn:
+			numBytes, err := tc.conn.Write(data.([]byte))
+			if numBytes > 0 {
+				log.Printf("To server %v\n", data)
+			}
+			cancel()
+			return err
+		case e := <-tc.errorChStdIn:
+			cancel()
+			return e
+		case <-ctx.Done():
+			cancel()
+			return nil
+		}
 	}
-	if numBytes <= 0 {
-		return nil
-	}
-	numBytes, errNet := tc.conn.Write(buffer[:numBytes])
-	if numBytes > 0 {
-		log.Printf("To server %v\n", buffer[:numBytes])
-	}
-	return errNet
 }
 
 func (tc *TelnetClientImpl) Receive() error {
-	buffer := make([]byte, 1024)
-	numBytes, err := tc.conn.Read(buffer)
-	if err != nil {
-		return err
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	for {
+		select {
+		case data := <-tc.inputChNet:
+			log.Printf("From server %v\n", data)
+			_, err := tc.out.Write(data.([]byte))
+			cancel()
+			return err
+		case e := <-tc.errorChNet:
+			cancel()
+			return e
+		case <-ctx.Done():
+			cancel()
+			return nil
+		}
 	}
-	if numBytes <= 0 {
-		return nil
-	}
-	log.Printf("From server %v\n", buffer[:numBytes])
-	_, err = tc.out.Write(buffer[:numBytes])
-	return err
 }
 
 func (tc *TelnetClientImpl) Close() error {

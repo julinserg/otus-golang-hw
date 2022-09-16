@@ -4,23 +4,23 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
 	"sync"
 	"time"
 )
 
 func main() {
-
-	client := NewTelnetClient("192.168.1.145:4242", 5*time.Second, os.Stdin, os.Stdout)
+	// client := NewTelnetClient("192.168.1.145:4242", 5*time.Second, os.Stdin, os.Stdout)
+	client := NewTelnetClient("127.0.0.1:4242", 5*time.Second, os.Stdin, os.Stdout)
 	defer client.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	err := client.Connect()
-	if err != nil {
-		log.Fatalf("Cannot connect: %v", err)
-	} else {
-		log.Println("Connected")
+	if err := client.Connect(); err != nil {
+		log.Printf("Cannot connect: %v \n", err)
+		return
 	}
+	log.Println("Connected")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -28,7 +28,7 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Send done")
+				log.Println("Send goroutine done")
 				return
 			default:
 				err := client.Send()
@@ -48,14 +48,13 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Receive done")
+				log.Println("Receive goroutine done")
 				return
 			default:
-				client.Receive()
-				log.Println("Receive")
+				err := client.Receive()
 				if err != nil {
 					log.Printf("Error receive: %v \n", err)
-					cancel()
+					// cancel()
 					return
 				}
 				time.Sleep(10 * time.Microsecond)
@@ -63,8 +62,7 @@ func main() {
 		}
 	}()
 
-	/*ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
-	defer stop()
+	ctxInterrupt, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	wg.Add(1)
 	go func() {
@@ -72,12 +70,15 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
+				log.Println("Wait Ctrl+C press goroutine done")
+				return
+			case <-ctxInterrupt.Done():
+				log.Println("Ctrl+C press")
 				cancel()
-				log.Fatalln("Correct exit")
-				stop()
+				return
 			}
 		}
-	}()*/
+	}()
 
 	wg.Wait()
 	log.Println("TelnetClient exit")
