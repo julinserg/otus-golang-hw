@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// client := NewTelnetClient("192.168.1.145:4242", 5*time.Second, os.Stdin, os.Stdout)
-	client := NewTelnetClient("127.0.0.1:4242", 5*time.Second, os.Stdin, os.Stdout)
+	client := NewTelnetClient("localhost:4242", 5*time.Second, os.Stdin, os.Stdout)
 	isConnected := false
 	defer func(isConn *bool) {
 		if *isConn {
