@@ -17,12 +17,37 @@ func init() {
 	flag.DurationVar(&timeout, "timeout", time.Second, "Connection timeout")
 }
 
+func getAddressAndPortString(values []string) string {
+	for i := 0; i < len(values); i++ {
+		if values[i] == "--timeout" || values[i] == "-timeout" {
+			values[i] = ""
+			if i+1 < len(values) {
+				values[i+1] = ""
+				break
+			} else {
+				log.Fatalln("ERROR: timeout not correct")
+			}
+		}
+	}
+	address := make([]string, 0)
+	for i := 0; i < len(values); i++ {
+		if values[i] != "" {
+			address = append(address, values[i])
+		}
+	}
+	if len(address) != 2 {
+		log.Fatalln("ERROR: bad address and port arguments")
+	}
+	return net.JoinHostPort(address[0], address[1])
+}
+
 func main() {
 	flag.Parse()
 	if len(os.Args) < 3 {
 		log.Fatalln("ERROR: Set address and port")
 	}
-	client := NewTelnetClient(net.JoinHostPort(os.Args[1], os.Args[2]), timeout, os.Stdin, os.Stdout)
+
+	client := NewTelnetClient(getAddressAndPortString(flag.Args()), timeout, os.Stdin, os.Stdout)
 	isConnected := false
 	defer func(isConn *bool) {
 		if *isConn {

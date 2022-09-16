@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io"
 	"log"
 	"net"
@@ -63,7 +62,6 @@ func (tc *TelnetClientImpl) Send() error {
 		go reader(tc.in, tc.inputChStdIn, tc.errorChStdIn)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	for {
 		select {
 		case data := <-tc.inputChStdIn:
@@ -71,13 +69,10 @@ func (tc *TelnetClientImpl) Send() error {
 			if numBytes > 0 {
 				log.Printf("To server %v\n", data)
 			}
-			cancel()
 			return err
 		case e := <-tc.errorChStdIn:
-			cancel()
 			return e
-		case <-ctx.Done():
-			cancel()
+		case <-time.After(1 * time.Second):
 			return nil
 		}
 	}
@@ -88,19 +83,16 @@ func (tc *TelnetClientImpl) Receive() error {
 		tc.receiveRoutineIsStart = true
 		go reader(tc.conn, tc.inputChNet, tc.errorChNet)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+
 	for {
 		select {
 		case data := <-tc.inputChNet:
 			log.Printf("From server %v\n", data)
 			_, err := tc.out.Write(data.([]byte))
-			cancel()
 			return err
 		case e := <-tc.errorChNet:
-			cancel()
 			return e
-		case <-ctx.Done():
-			cancel()
+		case <-time.After(1 * time.Second):
 			return nil
 		}
 	}
