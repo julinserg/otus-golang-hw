@@ -16,16 +16,17 @@ type TelnetClient interface {
 }
 
 type TelnetClientImpl struct {
-	address            string
-	timeout            time.Duration
-	in                 io.ReadCloser
-	out                io.Writer
-	conn               net.Conn
-	inputChNet         chan interface{}
-	errorChNet         chan error
-	inputChStdIn       chan interface{}
-	errorChStdIn       chan error
-	sendRoutineIsStart bool
+	address               string
+	timeout               time.Duration
+	in                    io.ReadCloser
+	out                   io.Writer
+	conn                  net.Conn
+	inputChNet            chan interface{}
+	errorChNet            chan error
+	inputChStdIn          chan interface{}
+	errorChStdIn          chan error
+	sendRoutineIsStart    bool
+	receiveRoutineIsStart bool
 }
 
 func reader(r io.Reader, input chan interface{}, errorCh chan error) {
@@ -52,8 +53,6 @@ func (tc *TelnetClientImpl) Connect() error {
 	tc.errorChNet = make(chan error)
 	tc.inputChStdIn = make(chan interface{})
 	tc.errorChStdIn = make(chan error)
-
-	go reader(tc.conn, tc.inputChNet, tc.errorChNet)
 
 	return err
 }
@@ -85,6 +84,10 @@ func (tc *TelnetClientImpl) Send() error {
 }
 
 func (tc *TelnetClientImpl) Receive() error {
+	if !tc.receiveRoutineIsStart {
+		tc.receiveRoutineIsStart = true
+		go reader(tc.conn, tc.inputChNet, tc.errorChNet)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	for {
 		select {
