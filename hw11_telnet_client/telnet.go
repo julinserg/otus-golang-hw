@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -34,7 +33,6 @@ func reader(r io.Reader, input chan string, errorCh chan error) {
 	rb := bufio.NewReader(r)
 	for {
 		dataStr, err := rb.ReadString('\n')
-		fmt.Println("read")
 		if err != nil {
 			errorCh <- err
 			return
