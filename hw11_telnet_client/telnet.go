@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -20,27 +22,28 @@ type TelnetClientImpl struct {
 	in                    io.ReadCloser
 	out                   io.Writer
 	conn                  net.Conn
-	inputChNet            chan interface{}
+	inputChNet            chan string
 	errorChNet            chan error
-	inputChStdIn          chan interface{}
+	inputChStdIn          chan string
 	errorChStdIn          chan error
 	sendRoutineIsStart    bool
 	receiveRoutineIsStart bool
 }
 
-func reader(r io.Reader, input chan interface{}, errorCh chan error) {
+func reader(r io.Reader, input chan string, errorCh chan error) {
+	rb := bufio.NewReader(r)
 	for {
-		buffer := make([]byte, 4100)
-		numBytes, err := r.Read(buffer)
+		dataStr, err := rb.ReadString('\n')
+		fmt.Println("read")
 		if err != nil {
 			errorCh <- err
 			return
 		}
-		if numBytes <= 0 {
-			input <- struct{}{}
+		if len(dataStr) <= 0 {
+			input <- ""
 			return
 		}
-		input <- buffer[:numBytes]
+		input <- dataStr
 	}
 }
 
@@ -48,9 +51,9 @@ func (tc *TelnetClientImpl) Connect() error {
 	var err error
 	tc.conn, err = net.DialTimeout("tcp", tc.address, tc.timeout)
 
-	tc.inputChNet = make(chan interface{})
+	tc.inputChNet = make(chan string)
 	tc.errorChNet = make(chan error)
-	tc.inputChStdIn = make(chan interface{})
+	tc.inputChStdIn = make(chan string)
 	tc.errorChStdIn = make(chan error)
 
 	return err
@@ -65,7 +68,7 @@ func (tc *TelnetClientImpl) Send() error {
 	for {
 		select {
 		case data := <-tc.inputChStdIn:
-			numBytes, err := tc.conn.Write(data.([]byte))
+			numBytes, err := tc.conn.Write([]byte(data))
 			if numBytes > 0 {
 				log.Printf("To server %v\n", data)
 			}
@@ -88,7 +91,7 @@ func (tc *TelnetClientImpl) Receive() error {
 		select {
 		case data := <-tc.inputChNet:
 			log.Printf("From server %v\n", data)
-			_, err := tc.out.Write(data.([]byte))
+			_, err := tc.out.Write([]byte(data))
 			return err
 		case e := <-tc.errorChNet:
 			return e
