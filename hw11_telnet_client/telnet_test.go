@@ -74,7 +74,7 @@ func TestTelnetClientBigData(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		var bigSlice = make([]string, 7000, 7000)
+		bigSlice := make([]string, 7000)
 		for j := 0; j < len(bigSlice)-1; j++ {
 			bigSlice[j] = "go"
 		}

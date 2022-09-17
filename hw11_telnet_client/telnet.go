@@ -39,7 +39,7 @@ func reader(r io.Reader, input chan string, errorCh chan error) {
 			errorCh <- err
 			return
 		}
-		if len(dataStr) <= 0 {
+		if len(dataStr) == 0 {
 			input <- ""
 			return
 		}
