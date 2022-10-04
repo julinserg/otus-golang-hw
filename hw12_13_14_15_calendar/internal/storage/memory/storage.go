@@ -17,7 +17,12 @@ type Storage struct {
 func (s *Storage) get(id string) (storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.events[id], nil
+	var ev storage.Event
+	var ok bool
+	if ev, ok = s.events[id]; !ok {
+		return ev, storage.ErrEventIDNotExist
+	}
+	return ev, nil
 }
 
 func dateEqual(date1, date2 time.Time) bool {
@@ -67,7 +72,7 @@ func (s *Storage) Add(event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(event.ID) == 0 {
-		return storage.ErrEventIdNotSet
+		return storage.ErrEventIDNotSet
 	}
 
 	if _, ok := s.eventsTime[event.TimeStart]; ok {
@@ -82,10 +87,10 @@ func (s *Storage) Update(event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(event.ID) == 0 {
-		return storage.ErrEventIdNotSet
+		return storage.ErrEventIDNotSet
 	}
 	if _, ok := s.events[event.ID]; !ok {
-		return storage.ErrEventIdNotExist
+		return storage.ErrEventIDNotExist
 	}
 	if _, ok := s.eventsTime[event.TimeStart]; ok && s.events[event.ID].TimeStart != event.TimeStart {
 		return storage.ErrTimeBusy
@@ -100,17 +105,16 @@ func (s *Storage) Remove(id string) error {
 	defer s.mu.Unlock()
 	ev, ok := s.events[id]
 	if !ok {
-		return storage.ErrEventIdNotExist
+		return storage.ErrEventIDNotExist
 	}
 	delete(s.eventsTime, ev.TimeStart)
 	delete(s.events, id)
 	return nil
 }
 
-func (s *Storage) create() error {
+func (s *Storage) create() {
 	s.events = make(map[string]storage.Event)
 	s.eventsTime = make(map[time.Time]string)
-	return nil
 }
 
 func New() *Storage {

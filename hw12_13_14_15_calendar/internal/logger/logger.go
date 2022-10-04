@@ -12,13 +12,16 @@ type Logger struct {
 }
 
 func New(level string, w io.Writer) *Logger {
-	if level == "INFO" {
+	switch level {
+	case "INFO":
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	} else if level == "ERROR" {
+	case "ERROR":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	} else if level == "WARN" {
+	case "WARN":
 		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	} else if level == "DEBUG" {
+	case "DEBUG":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	default:
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 	fileLogger := zerolog.New(w).With().Timestamp().Logger()

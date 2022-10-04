@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	// Register pgx driver for postgresql.
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage"
@@ -36,10 +37,10 @@ func (s *Storage) get(id string) (storage.Event, error) {
 	ev := storage.Event{}
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE id=:id`, map[string]interface{}{"id": id})
-	defer rows.Close()
 	if err != nil {
 		return ev, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.StructScan(&ev)
 		if err != nil {
@@ -55,12 +56,14 @@ func (s *Storage) GetEventsByDay(date time.Time) ([]storage.Event, error) {
 	dateDayEnd := date.AddDate(0, 0, 1)
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start < :timeE`,
-		map[string]interface{}{"timeS": dateDayBegin,
-			"timeE": dateDayEnd})
-	defer rows.Close()
+		map[string]interface{}{
+			"timeS": dateDayBegin,
+			"timeE": dateDayEnd,
+		})
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		ev := storage.Event{}
 		err := rows.StructScan(&ev)
@@ -76,12 +79,14 @@ func (s *Storage) getEventsByInterval(date1, date2 time.Time) ([]storage.Event, 
 	result := make([]storage.Event, 0)
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start <= :timeE`,
-		map[string]interface{}{"timeS": date1,
-			"timeE": date2})
-	defer rows.Close()
+		map[string]interface{}{
+			"timeS": date1,
+			"timeE": date2,
+		})
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		ev := storage.Event{}
 		err := rows.StructScan(&ev)
@@ -105,7 +110,7 @@ func (s *Storage) GetEventsByMonth(dateBeginMonth time.Time) ([]storage.Event, e
 
 func (s *Storage) Add(event storage.Event) error {
 	if len(event.ID) == 0 {
-		return storage.ErrEventIdNotSet
+		return storage.ErrEventIDNotSet
 	}
 	_, err := s.db.NamedExec(`INSERT INTO events (id,title,time_start,time_stop,description,user_id,time_notify)
 	 VALUES (:id,:title,:time_start,:time_stop,:description,:user_id,:time_notify)`,
@@ -126,10 +131,12 @@ func (s *Storage) Add(event storage.Event) error {
 
 func (s *Storage) Update(event storage.Event) error {
 	if len(event.ID) == 0 {
-		return storage.ErrEventIdNotSet
+		return storage.ErrEventIDNotSet
 	}
 	result, err := s.db.NamedExec(`UPDATE events SET title=:title, time_start=:time_start,
-	 time_stop=:time_stop,description=:description, user_id =:user_id, time_notify=:time_notify WHERE id = `+`'`+event.ID+`'`,
+	 time_stop=:time_stop,description=:description, 
+	 user_id =:user_id, time_notify=:time_notify 
+	 WHERE id = `+`'`+event.ID+`'`,
 		map[string]interface{}{
 			"title":       event.Title,
 			"time_start":  event.TimeStart,
@@ -141,7 +148,7 @@ func (s *Storage) Update(event storage.Event) error {
 	if result != nil {
 		rowAffected, errResult := result.RowsAffected()
 		if err == nil && rowAffected == 0 && errResult == nil {
-			return storage.ErrEventIdNotExist
+			return storage.ErrEventIDNotExist
 		}
 	}
 	if err != nil && strings.Contains(err.Error(), "time_start_unique") {
@@ -154,7 +161,7 @@ func (s *Storage) Remove(id string) error {
 	result, err := s.db.Exec(`DELETE FROM events	WHERE id = ` + `'` + id + `'`)
 	rowAffected, errResult := result.RowsAffected()
 	if err == nil && rowAffected == 0 && errResult == nil {
-		return storage.ErrEventIdNotExist
+		return storage.ErrEventIDNotExist
 	}
 	return err
 }

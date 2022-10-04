@@ -38,7 +38,6 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewServer(logger Logger, app Application, endpoint string) *Server {
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", serverHandler)
 

@@ -9,7 +9,7 @@ type Config struct {
 	Logger  LoggerConf
 	PSQL    PSQLConfig
 	Storage StorageConfig
-	Http    HttpConfig
+	HTTP    HTTPConfig
 }
 
 type LoggerConf struct {
@@ -25,7 +25,7 @@ type StorageConfig struct {
 	IsInMemory bool
 }
 
-type HttpConfig struct {
+type HTTPConfig struct {
 	Host string
 	Port string
 }

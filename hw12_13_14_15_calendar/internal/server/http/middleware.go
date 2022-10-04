@@ -26,7 +26,7 @@ func loggingMiddleware(next http.Handler, logger Logger) http.Handler {
 		sb.WriteString(r.URL.Path + " ")
 		sb.WriteString(r.Proto + " ")
 		sb.WriteString(strconv.Itoa(recorder.Status) + " ")
-		sb.WriteString(time.Now().Sub(startTime).String() + " ")
+		sb.WriteString(time.Since(startTime).String() + " ")
 		sb.WriteString(`'` + r.UserAgent() + `'`)
 		logger.Info(sb.String())
 	})

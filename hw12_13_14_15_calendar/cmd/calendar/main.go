@@ -24,7 +24,10 @@ func init() {
 	flag.StringVar(&configFile, "config", "./configs/config.toml", "Path to configuration file")
 }
 
-//goose -dir migrations postgres "user=sergey password=sergey dbname=calendar sslmode=disable" up
+/*
+ goose -dir migrations postgres "user=sergey password=sergey dbname=calendar sslmode=disable" up
+*/
+
 func main() {
 	flag.Parse()
 
@@ -39,7 +42,7 @@ func main() {
 		log.Fatalln("failed to read config: " + err.Error())
 	}
 
-	f, err := os.OpenFile("calendar_logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile("calendar_logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 	if err != nil {
 		log.Fatalln("error opening file: " + err.Error())
 	}
@@ -58,7 +61,7 @@ func main() {
 		defer cancel()
 		if err := sqlstor.Connect(ctx, config.PSQL.DSN); err != nil {
 			logg.Error("cannot connect to psql: " + err.Error())
-			os.Exit(1)
+			return
 		}
 		defer func() {
 			if err := sqlstor.Close(ctx); err != nil {
@@ -70,7 +73,7 @@ func main() {
 
 	calendar := app.New(logg, storage)
 
-	endpoint := net.JoinHostPort(config.Http.Host, config.Http.Port)
+	endpoint := net.JoinHostPort(config.HTTP.Host, config.HTTP.Port)
 	server := internalhttp.NewServer(logg, calendar, endpoint)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
@@ -93,6 +96,6 @@ func main() {
 	if err := server.Start(ctx); err != nil {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		return
 	}
 }
