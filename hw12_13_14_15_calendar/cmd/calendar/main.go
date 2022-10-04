@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,6 +24,7 @@ func init() {
 	flag.StringVar(&configFile, "config", "./configs/config.toml", "Path to configuration file")
 }
 
+//goose -dir migrations postgres "user=sergey password=sergey dbname=calendar sslmode=disable" up
 func main() {
 	flag.Parse()
 
@@ -36,7 +38,14 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to read config: " + err.Error())
 	}
-	logg := logger.New(config.Logger.Level)
+
+	f, err := os.OpenFile("calendar_logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalln("error opening file: " + err.Error())
+	}
+	defer f.Close()
+
+	logg := logger.New(config.Logger.Level, f)
 
 	var storage app.Storage
 	if config.Storage.IsInMemory {
@@ -61,7 +70,8 @@ func main() {
 
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	endpoint := net.JoinHostPort(config.Http.Host, config.Http.Port)
+	server := internalhttp.NewServer(logg, calendar, endpoint)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

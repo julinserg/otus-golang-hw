@@ -6,7 +6,8 @@ CREATE table events (
     time_stop       timestamp not null,
     description     text,
     user_id         text not null,    
-    time_notify     interval
+    time_notify     bigint,
+    CONSTRAINT time_start_unique UNIQUE (time_start)
 );
 
 -- +goose Down

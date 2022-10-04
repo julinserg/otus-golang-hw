@@ -9,6 +9,7 @@ type Config struct {
 	Logger  LoggerConf
 	PSQL    PSQLConfig
 	Storage StorageConfig
+	Http    HttpConfig
 }
 
 type LoggerConf struct {
@@ -22,6 +23,11 @@ type PSQLConfig struct {
 
 type StorageConfig struct {
 	IsInMemory bool
+}
+
+type HttpConfig struct {
+	Host string
+	Port string
 }
 
 func (c *Config) Read(fpath string) error {
