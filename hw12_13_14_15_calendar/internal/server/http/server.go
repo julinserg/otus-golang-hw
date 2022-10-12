@@ -4,7 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 )
+
+type Application interface {
+	AddEvent(event *app.EventApp) error
+	RemoveEvent(ID string) error
+}
 
 type Server struct { // TODO
 	server   *http.Server
@@ -19,9 +26,6 @@ type Logger interface {
 	Warn(msg string)
 }
 
-type Application interface { // TODO
-}
-
 type StatusRecorder struct {
 	http.ResponseWriter
 	Status int
@@ -32,19 +36,17 @@ func (r *StatusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
-func serverHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is my calendar!"))
-}
-
 func NewServer(logger Logger, app Application, endpoint string) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", serverHandler)
 
 	server := &http.Server{
 		Addr:    endpoint,
 		Handler: loggingMiddleware(mux, logger),
 	}
+	ch := calendarHandler{logger, app}
+	mux.HandleFunc("/", hellowHandler)
+	mux.HandleFunc("/add", ch.addEvent)
+	mux.HandleFunc("/remove", ch.removeEvent)
 	return &Server{server, logger, endpoint}
 }
 
@@ -60,5 +62,3 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Stop(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
-
-// TODO
