@@ -2,8 +2,10 @@ package internalhttp
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -46,14 +48,22 @@ func TestServiceAddEvent(t *testing.T) {
 		target       string
 		body         io.Reader
 		responseCode int
+		responseBody Response
 	}{
-		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest},
+		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
+			Response{Error: struct {
+				Message string `json:"message"`
+			}{
+				Message: "unexpected end of JSON input",
+			}},
+		},
 		{
 			"add-event-1",
 			http.MethodPost,
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "1", "title": "testTitle", "description": "testDescription", "time_start": "2021-02-18T21:54:42.123Z"}`),
 			http.StatusOK,
+			Response{},
 		},
 		{
 			"add-event-2",
@@ -61,6 +71,7 @@ func TestServiceAddEvent(t *testing.T) {
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "2", "title": "test", "description": "testDescription", "time_start": "2022-02-18T21:54:42.123Z"}`),
 			http.StatusOK,
+			Response{},
 		},
 		{
 			"add-event-3",
@@ -68,6 +79,11 @@ func TestServiceAddEvent(t *testing.T) {
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "3", "title": "test", "description": "testDescription", "time_start": "2022-02-18T21:54:42.123Z"}`),
 			http.StatusInternalServerError,
+			Response{Error: struct {
+				Message string `json:"message"`
+			}{
+				Message: "time event is busy",
+			}},
 		},
 		{
 			"add-event-4",
@@ -75,6 +91,11 @@ func TestServiceAddEvent(t *testing.T) {
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "4", "title": "test}`),
 			http.StatusBadRequest,
+			Response{Error: struct {
+				Message string `json:"message"`
+			}{
+				Message: "unexpected end of JSON input",
+			}},
 		},
 	}
 
@@ -85,6 +106,13 @@ func TestServiceAddEvent(t *testing.T) {
 			service.addEvent(w, r)
 			resp := w.Result()
 			require.Equal(t, c.responseCode, resp.StatusCode)
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			require.Nil(t, err)
+			result := Response{}
+			json.Unmarshal(body, &result)
+			require.Equal(t, result, c.responseBody)
 		})
 	}
 }
@@ -108,14 +136,21 @@ func TestServiceRemoveEvent(t *testing.T) {
 		target       string
 		body         io.Reader
 		responseCode int
+		responseBody Response
 	}{
-		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest},
+		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
+			Response{Error: struct {
+				Message string `json:"message"`
+			}{
+				Message: "unexpected end of JSON input",
+			}}},
 		{
 			"remove-event-1",
 			http.MethodPost,
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "1"}`),
 			http.StatusOK,
+			Response{},
 		},
 		{
 			"remove-event-2",
@@ -123,6 +158,11 @@ func TestServiceRemoveEvent(t *testing.T) {
 			"http://test.test",
 			bytes.NewBufferString(`{"id": "1"}`),
 			http.StatusInternalServerError,
+			Response{Error: struct {
+				Message string `json:"message"`
+			}{
+				Message: "Event ID not exist",
+			}},
 		},
 	}
 
@@ -133,6 +173,13 @@ func TestServiceRemoveEvent(t *testing.T) {
 			service.removeEvent(w, r)
 			resp := w.Result()
 			require.Equal(t, c.responseCode, resp.StatusCode)
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			require.Nil(t, err)
+			result := Response{}
+			json.Unmarshal(body, &result)
+			require.Equal(t, result, c.responseBody)
 		})
 	}
 }
