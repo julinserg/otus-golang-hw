@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 )
@@ -18,13 +19,17 @@ type RemoveEvent struct {
 	ID string `json:"id"`
 }
 
+type GetEvent struct {
+	Time time.Time `json:"time"`
+}
+
 type calendarHandler struct {
 	logger Logger
 	app    Application
 }
 
 type Response struct {
-	Data  interface{} `json:"data"`
+	Data  []app.EventApp `json:"data"`
 	Error struct {
 		Message string `json:"message"`
 	} `json:"error"`
@@ -43,8 +48,8 @@ func (ch *calendarHandler) WriteResponse(w http.ResponseWriter, resp *Response) 
 	return
 }
 
-func (ch *calendarHandler) checkRequest(w http.ResponseWriter, r *http.Request, buf []byte) bool {
-	if r.Method != http.MethodPost {
+func (ch *calendarHandler) checkRequest(methodType string, w http.ResponseWriter, r *http.Request, buf []byte) bool {
+	if r.Method != methodType {
 		resp := &Response{}
 		resp.Error.Message = fmt.Sprintf("method %s not supported on uri %s", r.Method, r.URL.Path)
 		ch.logger.Error(resp.Error.Message)
@@ -76,11 +81,12 @@ func (ch *calendarHandler) checkErrorAndSendResponse(err error, code int, w http
 	return true
 }
 
-type action func() error
+type actionPost func() error
+type actionGet func() ([]app.EventApp, error)
 
-func (ch *calendarHandler) genericHandler(w http.ResponseWriter, r *http.Request, data interface{}, act action) bool {
+func (ch *calendarHandler) genericHandlerPost(w http.ResponseWriter, r *http.Request, data interface{}, act actionPost) bool {
 	buf := make([]byte, r.ContentLength)
-	if !ch.checkRequest(w, r, buf) {
+	if !ch.checkRequest(http.MethodPost, w, r, buf) {
 		return false
 	}
 
@@ -96,12 +102,52 @@ func (ch *calendarHandler) genericHandler(w http.ResponseWriter, r *http.Request
 	return true
 }
 
+func (ch *calendarHandler) genericHandlerGet(w http.ResponseWriter, r *http.Request, data interface{}, act actionGet) bool {
+	buf := make([]byte, r.ContentLength)
+	if !ch.checkRequest(http.MethodGet, w, r, buf) {
+		return false
+	}
+
+	err := json.Unmarshal(buf, data)
+	if !ch.checkErrorAndSendResponse(err, http.StatusBadRequest, w) {
+		return false
+	}
+	events, err := act()
+	if !ch.checkErrorAndSendResponse(err, http.StatusInternalServerError, w) {
+		return false
+	}
+	w.WriteHeader(http.StatusOK)
+	resp := &Response{Data: events}
+	ch.WriteResponse(w, resp)
+	return true
+}
+
 func (ch *calendarHandler) addEvent(w http.ResponseWriter, r *http.Request) {
 	req := &app.EventApp{}
-	ch.genericHandler(w, r, req, func() error { return ch.app.AddEvent(req) })
+	ch.genericHandlerPost(w, r, req, func() error { return ch.app.AddEvent(req) })
 }
 
 func (ch *calendarHandler) removeEvent(w http.ResponseWriter, r *http.Request) {
 	req := &RemoveEvent{}
-	ch.genericHandler(w, r, req, func() error { return ch.app.RemoveEvent(req.ID) })
+	ch.genericHandlerPost(w, r, req, func() error { return ch.app.RemoveEvent(req.ID) })
+}
+
+func (ch *calendarHandler) updateEvent(w http.ResponseWriter, r *http.Request) {
+	req := &app.EventApp{}
+	ch.genericHandlerPost(w, r, req, func() error { return ch.app.UpdateEvent(req) })
+}
+
+func (ch *calendarHandler) getEventsByDay(w http.ResponseWriter, r *http.Request) {
+	req := &GetEvent{}
+	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByDay(req.Time) })
+}
+
+func (ch *calendarHandler) getEventsByMonth(w http.ResponseWriter, r *http.Request) {
+	req := &GetEvent{}
+	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByMonth(req.Time) })
+}
+
+func (ch *calendarHandler) getEventsByWeek(w http.ResponseWriter, r *http.Request) {
+	req := &GetEvent{}
+	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByWeek(req.Time) })
 }

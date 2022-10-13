@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 )
@@ -11,6 +12,10 @@ import (
 type Application interface {
 	AddEvent(event *app.EventApp) error
 	RemoveEvent(ID string) error
+	UpdateEvent(event *app.EventApp) error
+	GetEventsByDay(date time.Time) ([]app.EventApp, error)
+	GetEventsByMonth(date time.Time) ([]app.EventApp, error)
+	GetEventsByWeek(date time.Time) ([]app.EventApp, error)
 }
 
 type Server struct { // TODO
@@ -47,6 +52,10 @@ func NewServer(logger Logger, app Application, endpoint string) *Server {
 	mux.HandleFunc("/", hellowHandler)
 	mux.HandleFunc("/add", ch.addEvent)
 	mux.HandleFunc("/remove", ch.removeEvent)
+	mux.HandleFunc("/update", ch.updateEvent)
+	mux.HandleFunc("/get_by_day", ch.getEventsByDay)
+	mux.HandleFunc("/get_by_month", ch.getEventsByMonth)
+	mux.HandleFunc("/get_by_week", ch.getEventsByWeek)
 	return &Server{server, logger, endpoint}
 }
 
