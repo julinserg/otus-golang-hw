@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
@@ -416,7 +417,11 @@ func TestServiceGetEvents(t *testing.T) {
 			require.Nil(t, err)
 			result := Response{}
 			json.Unmarshal(body, &result)
-			require.Equal(t, c.responseBody, result)
+
+			if !reflect.DeepEqual(c.responseBody, result) {
+				t.Fatalf("[%s] results not match\nGot : %#v\nWant: %#v", c.name, result, c.responseBody)
+				return
+			}
 		})
 	}
 }
