@@ -41,7 +41,6 @@ func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeReques
 		resp.Error = err.Error()
 		return resp, err
 	}
-	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
 		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
