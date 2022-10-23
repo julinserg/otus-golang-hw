@@ -19,31 +19,19 @@ func (s *ServiceCalendar) AddEvent(ctx context.Context, req *pb.EventRequest) (*
 	err := s.app.AddEvent(&app.EventApp{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
 		TimeEnd: req.Event.TimeEnd.AsTime()})
-	resp := &pb.ErrorResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-	}
-	return resp, err
+	return &pb.ErrorResponse{}, err
 }
 
 func (s *ServiceCalendar) RemoveEvent(ctx context.Context, req *pb.IdRequest) (*pb.ErrorResponse, error) {
 	err := s.app.RemoveEvent(req.Id)
-	resp := &pb.ErrorResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-	}
-	return resp, err
+	return &pb.ErrorResponse{}, err
 }
 
 func (s *ServiceCalendar) UpdateEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
 	err := s.app.UpdateEvent(&app.EventApp{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
 		TimeEnd: req.Event.TimeEnd.AsTime()})
-	resp := &pb.ErrorResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-	}
-	return resp, err
+	return &pb.ErrorResponse{}, err
 }
 
 func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
