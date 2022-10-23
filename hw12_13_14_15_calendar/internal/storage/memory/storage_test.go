@@ -60,6 +60,9 @@ func TestStorageBasic(t *testing.T) {
 
 	event3 := storage.Event{Title: "event 3"}
 	require.ErrorIs(t, st.Add(event3), storage.ErrEventIDNotSet)
+
+	event4 := storage.Event{ID: "{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}", Title: "event 4"}
+	require.ErrorIs(t, st.Add(event4), storage.ErrEventIDAlreadyExist)
 }
 
 func TestStorageGoroutine(t *testing.T) {

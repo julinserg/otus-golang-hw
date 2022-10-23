@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	ErrEventIDNotSet   = errors.New("Event ID not set")
-	ErrEventIDNotExist = errors.New("Event ID not exist")
-	ErrTimeBusy        = errors.New("time event is busy")
+	ErrEventIDNotSet       = errors.New("Event ID not set")
+	ErrEventIDNotExist     = errors.New("Event ID not exist")
+	ErrEventIDAlreadyExist = errors.New("Event ID already exist")
+	ErrTimeBusy            = errors.New("time event is busy")
 )
 
 type Event struct {

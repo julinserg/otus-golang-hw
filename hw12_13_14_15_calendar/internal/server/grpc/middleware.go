@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 func loggingMiddleware(logger Logger) grpc.UnaryServerInterceptor {
@@ -22,15 +23,13 @@ func loggingMiddleware(logger Logger) grpc.UnaryServerInterceptor {
 		mD, _ := metadata.FromIncomingContext(ctx)
 		ua := mD["user-agent"]
 
+		rpcStatus := status.Convert(err)
+
 		var sb strings.Builder
 		sb.WriteString(ip + " ")
 		sb.WriteString("[" + startTime.String() + "] ")
 		sb.WriteString(info.FullMethod + " ")
-		if err != nil {
-			sb.WriteString("ResponseStatus: `" + err.Error() + "` ")
-		} else {
-			sb.WriteString("ResponseStatus: `OK` ")
-		}
+		sb.WriteString(rpcStatus.Code().String() + " ")
 		sb.WriteString(time.Since(startTime).String() + " ")
 		sb.WriteString(`'` + strings.Join(ua, "") + `'`)
 		logger.Info(sb.String())
