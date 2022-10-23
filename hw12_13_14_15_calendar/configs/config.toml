@@ -10,3 +10,7 @@ dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar sslm
 [http]
 host = "127.0.0.1"
 port = "8080"
+
+[grpc]
+host = "127.0.0.1"
+port = "50001"

@@ -18,7 +18,7 @@ type Application interface {
 	GetEventsByWeek(date time.Time) ([]app.EventApp, error)
 }
 
-type Server struct { // TODO
+type Server struct {
 	server   *http.Server
 	logger   Logger
 	endpoint string
@@ -60,11 +60,11 @@ func NewServer(logger Logger, app Application, endpoint string) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info("server started on " + s.endpoint)
+	s.logger.Info("http server started on " + s.endpoint)
 	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
-	s.logger.Info("server stopped")
+	s.logger.Info("http server stopped")
 	return nil
 }
 

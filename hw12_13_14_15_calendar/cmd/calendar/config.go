@@ -10,6 +10,7 @@ type Config struct {
 	PSQL    PSQLConfig
 	Storage StorageConfig
 	HTTP    HTTPConfig
+	GRPC    GRPCConfig
 }
 
 type LoggerConf struct {
@@ -26,6 +27,11 @@ type StorageConfig struct {
 }
 
 type HTTPConfig struct {
+	Host string
+	Port string
+}
+
+type GRPCConfig struct {
 	Host string
 	Port string
 }

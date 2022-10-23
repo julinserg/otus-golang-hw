@@ -11,4 +11,7 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
+	google.golang.org/genproto v0.0.0-20210607140030-00d4fb20b1ae // indirect
+	google.golang.org/grpc v1.50.1
+	google.golang.org/protobuf v1.28.1
 )
