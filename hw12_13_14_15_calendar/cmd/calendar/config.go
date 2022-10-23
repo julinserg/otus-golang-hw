@@ -23,7 +23,7 @@ type PSQLConfig struct {
 }
 
 type StorageConfig struct {
-	IsInMemory bool
+	Type string
 }
 
 type HTTPConfig struct {

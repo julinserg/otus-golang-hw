@@ -53,10 +53,11 @@ func main() {
 	logg := logger.New(config.Logger.Level, f)
 
 	var storage app.Storage
-	if config.Storage.IsInMemory {
+	switch config.Storage.Type {
+	case "inmemory":
 		fmt.Println("use inmemory")
 		storage = memorystorage.New()
-	} else {
+	case "psql":
 		fmt.Println("use psql")
 		sqlstor := sqlstorage.New()
 		ctx, cancel := context.WithCancel(context.Background())
