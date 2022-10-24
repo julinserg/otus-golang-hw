@@ -1,23 +1,59 @@
-package memorystorage
+package sqlstorage
 
 import (
-	"strconv"
-	"sync"
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
+var schema = `
+DROP table if exists events;
+CREATE table events (
+    id              text primary key,
+    title           text not null,
+    time_start      timestamp not null,
+    time_stop       timestamp not null,
+    description     text,
+    user_id         text not null,    
+    time_notify     bigint,
+	CONSTRAINT time_start_unique UNIQUE (time_start)
+);`
+
 func TestStorageBasic(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+	dbTest, err := sqlx.Open("pgx", dsn)
+	require.Nil(t, err)
+
+	err = dbTest.PingContext(ctx)
+	require.Nil(t, err)
+
+	dbTest.MustExec(schema)
+
+	dbTest.Close()
+
 	st := New()
+
+	err = st.Connect(ctx, dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(ctx); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
 
 	event1 := storage.Event{
 		ID: "{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}", Title: "event 1",
 		TimeStart: time.Date(2022, time.Month(1), 1, 1, 10, 30, 0, time.UTC),
 	}
-	err := st.Add(event1)
+	err = st.Add(event1)
 	require.Nil(t, err)
 	event2 := storage.Event{
 		ID: "{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}", Title: "event 2",
@@ -62,50 +98,30 @@ func TestStorageBasic(t *testing.T) {
 	require.ErrorIs(t, st.Add(event3), storage.ErrEventIDNotSet)
 }
 
-func TestStorageGoroutine(t *testing.T) {
-	st := New()
-	wg := &sync.WaitGroup{}
-	wg.Add(20)
-	for i := 0; i < 10; i++ {
-		go func(i int) {
-			defer wg.Done()
-			event := storage.Event{
-				ID:        strconv.Itoa(i),
-				Title:     strconv.Itoa(i),
-				TimeStart: time.Date(2022, time.Month(1), i+1, 1, 10, 30, 0, time.UTC),
-			}
-			st.Add(event)
-		}(i)
-		go func(i int) {
-			defer wg.Done()
-			st.get(strconv.Itoa(i))
-		}(i)
-	}
-	wg.Wait()
-	resGet, _ := st.get("0")
-	require.Equal(t, "0", resGet.Title)
-	resGet, _ = st.get("1")
-	require.Equal(t, "1", resGet.Title)
-	resGet, _ = st.get("2")
-	require.Equal(t, "2", resGet.Title)
-	resGet, _ = st.get("3")
-	require.Equal(t, "3", resGet.Title)
-	resGet, _ = st.get("4")
-	require.Equal(t, "4", resGet.Title)
-	resGet, _ = st.get("5")
-	require.Equal(t, "5", resGet.Title)
-	resGet, _ = st.get("6")
-	require.Equal(t, "6", resGet.Title)
-	resGet, _ = st.get("7")
-	require.Equal(t, "7", resGet.Title)
-	resGet, _ = st.get("8")
-	require.Equal(t, "8", resGet.Title)
-	resGet, _ = st.get("9")
-	require.Equal(t, "9", resGet.Title)
-}
-
 func TestStorageLogic(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+	dbTest, err := sqlx.Open("pgx", dsn)
+	require.Nil(t, err)
+
+	err = dbTest.PingContext(ctx)
+	require.Nil(t, err)
+
+	dbTest.MustExec(schema)
+
+	dbTest.Close()
+
 	st := New()
+
+	err = st.Connect(ctx, dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(ctx); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
 
 	st.Add(storage.Event{
 		ID:        "1",
