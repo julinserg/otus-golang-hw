@@ -165,3 +165,26 @@ func (s *Storage) Remove(id string) error {
 	}
 	return err
 }
+
+func (s *Storage) GetEventsByNotify() ([]storage.Event, error) {
+	result := make([]storage.Event, 0)
+	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
+	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start <= :timeE`,
+		map[string]interface{}{
+			"timeS": time.Now(),
+			"timeE": time.Now(),
+		})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		ev := storage.Event{}
+		err := rows.StructScan(&ev)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, ev)
+	}
+	return result, nil
+}

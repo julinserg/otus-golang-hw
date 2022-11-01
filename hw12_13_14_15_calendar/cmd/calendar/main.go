@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app_calendar"
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/logger"
 	internalgrpc "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/server/http"
@@ -74,7 +75,7 @@ func main() {
 		storage = sqlstor
 	}
 
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 
 	endpointHttp := net.JoinHostPort(config.HTTP.Host, config.HTTP.Port)
 	serverHttp := internalhttp.NewServer(logg, calendar, endpointHttp)
