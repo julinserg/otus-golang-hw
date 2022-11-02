@@ -38,7 +38,7 @@ func fillEventsResponse(events []app.Event, err error) (*pb.EventsResponse, erro
 		return resp, err
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
-	for _, e := range events {
+	for _, e := range events { //nolint:typecheck
 		resp.Events = append(resp.Events, eventToPb(&e))
 	}
 	return resp, nil
