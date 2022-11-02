@@ -15,82 +15,70 @@ type ServiceCalendar struct {
 	app    Application
 }
 
+func eventFromPb(ev *pb.Event) *app.Event {
+	return &app.Event{
+		ID: ev.Id, Title: ev.Title, Description: ev.Description,
+		UserID: ev.UserID, NotificationTime: time.Duration(ev.NotificationTime), TimeStart: ev.TimeStart.AsTime(),
+		TimeEnd: ev.TimeEnd.AsTime(),
+	}
+}
+
+func eventToPb(ev *app.Event) *pb.Event {
+	return &pb.Event{
+		Id: ev.ID, Title: ev.Title, Description: ev.Description,
+		UserID: ev.UserID, NotificationTime: int64(ev.NotificationTime), TimeStart: timestamppb.New(ev.TimeStart),
+		TimeEnd: timestamppb.New(ev.TimeEnd),
+	}
+}
+
+func fillEventsResponse(events []app.Event, err error) (*pb.EventsResponse, error) {
+	resp := &pb.EventsResponse{}
+	if err != nil {
+		resp.Error = err.Error()
+		return resp, err
+	}
+	resp.Events = make([]*pb.Event, 0, len(events))
+	for _, e := range events {
+		resp.Events = append(resp.Events, eventToPb(&e))
+	}
+	return resp, nil
+}
+
+func fillErrorResponse(err error) (*pb.ErrorResponse, error) {
+	resp := &pb.ErrorResponse{}
+	if err != nil {
+		resp.Error = err.Error()
+		return resp, err
+	}
+	return resp, nil
+}
+
 func (s *ServiceCalendar) AddEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.AddEvent(&app.Event{
-		ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
-		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
-		TimeEnd: req.Event.TimeEnd.AsTime(),
-	})
-	return &pb.ErrorResponse{}, err
+	err := s.app.AddEvent(eventFromPb(req.Event))
+	return fillErrorResponse(err)
 }
 
 func (s *ServiceCalendar) RemoveEvent(ctx context.Context, req *pb.IdRequest) (*pb.ErrorResponse, error) {
 	err := s.app.RemoveEvent(req.Id)
-	return &pb.ErrorResponse{}, err
+	return fillErrorResponse(err)
 }
 
 func (s *ServiceCalendar) UpdateEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.UpdateEvent(&app.Event{
-		ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
-		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
-		TimeEnd: req.Event.TimeEnd.AsTime(),
-	})
-	return &pb.ErrorResponse{}, err
+	err := s.app.UpdateEvent(eventFromPb(req.Event))
+	return fillErrorResponse(err)
 }
 
 func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
 	events, err := s.app.GetEventsByDay(req.Date.AsTime())
-	resp := &pb.EventsResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-		return resp, err
-	}
-	resp.Events = make([]*pb.Event, 0, len(events))
-	for _, e := range events {
-		ev := &pb.Event{ //nolint:typecheck
-			Id: e.ID, Title: e.Title, Description: e.Description,
-			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd),
-		}
-		resp.Events = append(resp.Events, ev)
-	}
-	return resp, err
+	return fillEventsResponse(events, err)
 }
 
 func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
 	events, err := s.app.GetEventsByMonth(req.Date.AsTime())
-	resp := &pb.EventsResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-		return resp, err
-	}
-	resp.Events = make([]*pb.Event, 0, len(events))
-	for _, e := range events {
-		ev := &pb.Event{ //nolint:typecheck
-			Id: e.ID, Title: e.Title, Description: e.Description,
-			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd),
-		}
-		resp.Events = append(resp.Events, ev)
-	}
-	return resp, err
+	return fillEventsResponse(events, err)
 }
 
 func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
 	events, err := s.app.GetEventsByWeek(req.Date.AsTime())
-	resp := &pb.EventsResponse{}
-	if err != nil {
-		resp.Error = err.Error()
-		return resp, err
-	}
-	resp.Events = make([]*pb.Event, 0, len(events))
-	for _, e := range events {
-		ev := &pb.Event{ //nolint:typecheck
-			Id: e.ID, Title: e.Title, Description: e.Description,
-			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd),
-		}
-		resp.Events = append(resp.Events, ev)
-	}
-	return resp, err
+	return fillEventsResponse(events, err)
 }
