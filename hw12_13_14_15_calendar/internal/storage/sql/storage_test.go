@@ -21,6 +21,7 @@ CREATE table events (
     description     text,
     user_id         text not null,    
     time_notify     bigint,
+	is_notifyed     boolean,
 	CONSTRAINT time_start_unique UNIQUE (time_start)
 );`
 
