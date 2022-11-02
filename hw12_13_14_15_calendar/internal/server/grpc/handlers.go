@@ -51,7 +51,7 @@ func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeReques
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
-		} //nolint:typecheck
+		}
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
@@ -70,7 +70,7 @@ func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequ
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
-		} //nolint:typecheck
+		}
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
@@ -89,7 +89,7 @@ func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeReque
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
-		} //nolint:typecheck
+		}
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
