@@ -18,8 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type LoggerFakeImpl struct {
-}
+type LoggerFakeImpl struct{}
 
 func (l LoggerFakeImpl) Info(msg string) {
 	fmt.Println("Info: " + msg)
@@ -51,7 +50,8 @@ func TestServiceAddEvent(t *testing.T) {
 		responseCode int
 		responseBody Response
 	}{
-		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
+		{
+			"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
 			Response{Error: struct {
 				Message string `json:"message"`
 			}{
@@ -139,12 +139,14 @@ func TestServiceRemoveEvent(t *testing.T) {
 		responseCode int
 		responseBody Response
 	}{
-		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
+		{
+			"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
 			Response{Error: struct {
 				Message string `json:"message"`
 			}{
 				Message: "unexpected end of JSON input",
-			}}},
+			}},
+		},
 		{
 			"remove-event-1",
 			http.MethodPost,
@@ -206,12 +208,14 @@ func TestServiceUpdateEvent(t *testing.T) {
 		responseCode int
 		responseBody Response
 	}{
-		{"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
+		{
+			"bad_request", http.MethodPost, "http://test.test", nil, http.StatusBadRequest,
 			Response{Error: struct {
 				Message string `json:"message"`
 			}{
 				Message: "unexpected end of JSON input",
-			}}},
+			}},
+		},
 		{
 			"update-event-1",
 			http.MethodPost,
@@ -290,25 +294,30 @@ func TestServiceGetEvents(t *testing.T) {
 		responseCode int
 		responseBody Response
 	}{
-		{"bad_request", http.MethodGet, "http://test.test/get_by_day", nil, http.StatusBadRequest,
+		{
+			"bad_request", http.MethodGet, "http://test.test/get_by_day", nil, http.StatusBadRequest,
 			Response{Error: struct {
 				Message string `json:"message"`
 			}{
 				Message: "unexpected end of JSON input",
-			}}},
+			}},
+		},
 		{
 			"get-event-by-day-1",
 			http.MethodGet,
 			"http://test.test/get_by_day",
 			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.Event{{ID: "1",
-				Title:            "event 1",
-				TimeStart:        time.Date(2022, time.January, 1, 1, 10, 30, 0, time.UTC),
-				TimeEnd:          time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
-				Description:      "",
-				UserID:           "",
-				NotificationTime: 0}},
+			Response{
+				Data: []app.Event{{
+					ID:               "1",
+					Title:            "event 1",
+					TimeStart:        time.Date(2022, time.January, 1, 1, 10, 30, 0, time.UTC),
+					TimeEnd:          time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
+					Description:      "",
+					UserID:           "",
+					NotificationTime: 0,
+				}},
 			},
 		},
 		{
@@ -343,7 +352,8 @@ func TestServiceGetEvents(t *testing.T) {
 					Description:      "",
 					UserID:           "",
 					NotificationTime: 0,
-				}}},
+				},
+			}},
 		},
 		{
 			"get-event-by-week-2",
@@ -386,7 +396,8 @@ func TestServiceGetEvents(t *testing.T) {
 					Description:      "",
 					UserID:           "",
 					NotificationTime: 0,
-				}}},
+				},
+			}},
 		},
 		{
 			"get-event-by-month-2",

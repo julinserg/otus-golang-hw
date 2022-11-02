@@ -42,9 +42,11 @@ func New(logger Logger, storage Storage) *App {
 }
 
 func (a *App) AddEvent(event *Event) error {
-	return a.storage.Add(storage.Event{ID: event.ID, Title: event.Title, Description: event.Description,
+	return a.storage.Add(storage.Event{
+		ID: event.ID, Title: event.Title, Description: event.Description,
 		UserID: event.UserID, NotificationTime: event.NotificationTime, TimeStart: event.TimeStart,
-		TimeEnd: event.TimeEnd})
+		TimeEnd: event.TimeEnd,
+	})
 }
 
 func (a *App) RemoveEvent(ID string) error {
@@ -52,9 +54,11 @@ func (a *App) RemoveEvent(ID string) error {
 }
 
 func (a *App) UpdateEvent(event *Event) error {
-	return a.storage.Update(storage.Event{ID: event.ID, Title: event.Title, Description: event.Description,
+	return a.storage.Update(storage.Event{
+		ID: event.ID, Title: event.Title, Description: event.Description,
 		UserID: event.UserID, NotificationTime: event.NotificationTime, TimeStart: event.TimeStart,
-		TimeEnd: event.TimeEnd})
+		TimeEnd: event.TimeEnd,
+	})
 }
 
 type getEvent func(date time.Time) ([]storage.Event, error)
@@ -66,9 +70,11 @@ func (a *App) genericGetEventsBy(date time.Time, f getEvent) ([]Event, error) {
 	}
 	eventsApp := make([]Event, 0, len(events))
 	for _, event := range events {
-		eventsApp = append(eventsApp, Event{ID: event.ID, Title: event.Title, Description: event.Description,
+		eventsApp = append(eventsApp, Event{
+			ID: event.ID, Title: event.Title, Description: event.Description,
 			UserID: event.UserID, NotificationTime: event.NotificationTime, TimeStart: event.TimeStart,
-			TimeEnd: event.TimeEnd})
+			TimeEnd: event.TimeEnd,
+		})
 	}
 	return eventsApp, nil
 }

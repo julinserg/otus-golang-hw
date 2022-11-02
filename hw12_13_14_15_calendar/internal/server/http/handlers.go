@@ -81,8 +81,10 @@ func (ch *calendarHandler) checkErrorAndSendResponse(err error, code int, w http
 	return true
 }
 
-type actionPost func() error
-type actionGet func() ([]app.Event, error)
+type (
+	actionPost func() error
+	actionGet  func() ([]app.Event, error)
+)
 
 func (ch *calendarHandler) genericHandlerPost(w http.ResponseWriter, r *http.Request, data interface{}, act actionPost) bool {
 	buf := make([]byte, r.ContentLength)

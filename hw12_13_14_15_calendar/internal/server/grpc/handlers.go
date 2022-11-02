@@ -16,9 +16,11 @@ type ServiceCalendar struct {
 }
 
 func (s *ServiceCalendar) AddEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.AddEvent(&app.Event{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
+	err := s.app.AddEvent(&app.Event{
+		ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
-		TimeEnd: req.Event.TimeEnd.AsTime()})
+		TimeEnd: req.Event.TimeEnd.AsTime(),
+	})
 	return &pb.ErrorResponse{}, err
 }
 
@@ -28,9 +30,11 @@ func (s *ServiceCalendar) RemoveEvent(ctx context.Context, req *pb.IdRequest) (*
 }
 
 func (s *ServiceCalendar) UpdateEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.UpdateEvent(&app.Event{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
+	err := s.app.UpdateEvent(&app.Event{
+		ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
-		TimeEnd: req.Event.TimeEnd.AsTime()})
+		TimeEnd: req.Event.TimeEnd.AsTime(),
+	})
 	return &pb.ErrorResponse{}, err
 }
 
@@ -43,14 +47,16 @@ func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeReques
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
+		ev := &pb.Event{
+			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd)}
+			TimeEnd: timestamppb.New(e.TimeEnd),
+		} //nolint:typecheck
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
-
 }
+
 func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
 	events, err := s.app.GetEventsByMonth(req.Date.AsTime())
 	resp := &pb.EventsResponse{}
@@ -60,13 +66,16 @@ func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequ
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
+		ev := &pb.Event{
+			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd)}
+			TimeEnd: timestamppb.New(e.TimeEnd),
+		} //nolint:typecheck
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
 }
+
 func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeRequest) (*pb.EventsResponse, error) {
 	events, err := s.app.GetEventsByWeek(req.Date.AsTime())
 	resp := &pb.EventsResponse{}
@@ -76,9 +85,11 @@ func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeReque
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
+		ev := &pb.Event{
+			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
-			TimeEnd: timestamppb.New(e.TimeEnd)}
+			TimeEnd: timestamppb.New(e.TimeEnd),
+		} //nolint:typecheck
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
