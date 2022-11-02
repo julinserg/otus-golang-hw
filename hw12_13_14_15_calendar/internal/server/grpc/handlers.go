@@ -47,7 +47,7 @@ func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeReques
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{
+		ev := &pb.Event{ //nolint:typecheck
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
@@ -66,7 +66,7 @@ func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequ
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{
+		ev := &pb.Event{ //nolint:typecheck
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
@@ -85,7 +85,7 @@ func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeReque
 	}
 	resp.Events = make([]*pb.Event, 0, len(events))
 	for _, e := range events {
-		ev := &pb.Event{
+		ev := &pb.Event{ //nolint:typecheck
 			Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd),
