@@ -166,14 +166,14 @@ func (s *Storage) Remove(id string) error {
 	return err
 }
 
-func (s *Storage) GetEventsByNotify() ([]storage.Event, error) {
+func (s *Storage) GetEventsForNotify(timeNow time.Time) ([]storage.Event, error) {
+	//select id from events where time_start  <= to_timestamp('2022-10-23 01:05:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1 min' * time_notify
 	result := make([]storage.Event, 0)
-	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
-	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start <= :timeE`,
-		map[string]interface{}{
-			"timeS": time.Now(),
-			"timeE": time.Now(),
-		})
+	rows, err := s.db.Queryx(`SELECT id,title,time_start,time_stop,description,
+	user_id,time_notify FROM events WHERE
+	time_notify > 0
+	AND 
+	time_start <= to_timestamp('` + timeNow.String() + `', 'YYYY-MM-DD HH24:MI:SS') + (INTERVAL '1 milliseconds' * (time_notify/1000000))`)
 	if err != nil {
 		return nil, err
 	}

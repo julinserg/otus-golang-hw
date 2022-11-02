@@ -221,3 +221,59 @@ func TestStorageLogic(t *testing.T) {
 	})
 	require.Nil(t, err)
 }
+
+func TestStorageGetEventForNotify(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+	dbTest, err := sqlx.Open("pgx", dsn)
+	require.Nil(t, err)
+
+	err = dbTest.PingContext(ctx)
+	require.Nil(t, err)
+
+	dbTest.MustExec(schema)
+
+	dbTest.Close()
+
+	st := New()
+
+	err = st.Connect(ctx, dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(ctx); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
+
+	err = st.Add(storage.Event{
+		ID:        "1",
+		Title:     "event 1",
+		TimeStart: time.Date(2022, time.Month(1), 1, 10, 12, 9, 0, time.UTC),
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "2",
+		Title:            "event 2",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC),
+		NotificationTime: 5 * time.Minute,
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "3",
+		Title:            "event 3",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 13, 10, 0, 0, time.UTC),
+		NotificationTime: 5 * time.Minute,
+	})
+
+	require.Nil(t, err)
+
+	res, err := st.GetEventsForNotify(time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC))
+	require.Nil(t, err)
+	require.Equal(t, 1, len(res))
+
+	require.Equal(t, "2", res[0].ID)
+}

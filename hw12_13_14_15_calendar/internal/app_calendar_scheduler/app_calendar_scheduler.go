@@ -11,7 +11,7 @@ import (
 )
 
 type Storage interface {
-	GetEventsByNotify() ([]storage.Event, error)
+	GetEventsForNotify(timeNow time.Time) ([]storage.Event, error)
 }
 
 type Logger interface {
@@ -48,7 +48,7 @@ func New(logger Logger, storage Storage,
 
 func (a *AppCalendarScheduler) sendNotify() error {
 
-	events, err := a.storage.GetEventsByNotify()
+	events, err := a.storage.GetEventsForNotify(time.Now())
 	if err != nil {
 		return err
 	}

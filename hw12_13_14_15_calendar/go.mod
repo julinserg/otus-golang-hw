@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v1.2.0
-	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jmoiron/sqlx v1.3.5
