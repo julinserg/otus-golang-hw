@@ -16,7 +16,7 @@ type ServiceCalendar struct {
 }
 
 func (s *ServiceCalendar) AddEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.AddEvent(&app.EventApp{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
+	err := s.app.AddEvent(&app.Event{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
 		TimeEnd: req.Event.TimeEnd.AsTime()})
 	return &pb.ErrorResponse{}, err
@@ -28,7 +28,7 @@ func (s *ServiceCalendar) RemoveEvent(ctx context.Context, req *pb.IdRequest) (*
 }
 
 func (s *ServiceCalendar) UpdateEvent(ctx context.Context, req *pb.EventRequest) (*pb.ErrorResponse, error) {
-	err := s.app.UpdateEvent(&app.EventApp{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
+	err := s.app.UpdateEvent(&app.Event{ID: req.Event.Id, Title: req.Event.Title, Description: req.Event.Description,
 		UserID: req.Event.UserID, NotificationTime: time.Duration(req.Event.NotificationTime), TimeStart: req.Event.TimeStart.AsTime(),
 		TimeEnd: req.Event.TimeEnd.AsTime()})
 	return &pb.ErrorResponse{}, err
@@ -46,7 +46,6 @@ func (s *ServiceCalendar) GetEventsByDay(ctx context.Context, req *pb.TimeReques
 		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd)}
-		_ = ev // fix lint error ev declared but not used (typecheck) https://github.com/julinserg/go_home_work/actions/runs/3307616392/jobs/5459378843
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
@@ -64,7 +63,6 @@ func (s *ServiceCalendar) GetEventsByMonth(ctx context.Context, req *pb.TimeRequ
 		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd)}
-		_ = ev // fix lint error ev declared but not used (typecheck) https://github.com/julinserg/go_home_work/actions/runs/3307616392/jobs/5459378843
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err
@@ -81,7 +79,6 @@ func (s *ServiceCalendar) GetEventsByWeek(ctx context.Context, req *pb.TimeReque
 		ev := &pb.Event{Id: e.ID, Title: e.Title, Description: e.Description,
 			UserID: e.UserID, NotificationTime: int64(e.NotificationTime), TimeStart: timestamppb.New(e.TimeStart),
 			TimeEnd: timestamppb.New(e.TimeEnd)}
-		_ = ev // fix lint error ev declared but not used (typecheck) https://github.com/julinserg/go_home_work/actions/runs/3307616392/jobs/5459378843
 		resp.Events = append(resp.Events, ev)
 	}
 	return resp, err

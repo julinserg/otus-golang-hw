@@ -302,7 +302,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_day",
 			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{{ID: "1",
+			Response{Data: []app.Event{{ID: "1",
 				Title:            "event 1",
 				TimeStart:        time.Date(2022, time.January, 1, 1, 10, 30, 0, time.UTC),
 				TimeEnd:          time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -317,7 +317,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_day",
 			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{}},
+			Response{Data: []app.Event{}},
 		},
 		{
 			"get-event-by-week-1",
@@ -325,7 +325,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_week",
 			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{
+			Response{Data: []app.Event{
 				{
 					ID:               "1",
 					Title:            "event 1",
@@ -351,7 +351,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_week",
 			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{}},
+			Response{Data: []app.Event{}},
 		},
 		{
 			"get-event-by-month-1",
@@ -359,7 +359,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_month",
 			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{
+			Response{Data: []app.Event{
 				{
 					ID:               "1",
 					Title:            "event 1",
@@ -394,7 +394,7 @@ func TestServiceGetEvents(t *testing.T) {
 			"http://test.test/get_by_month",
 			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
 			http.StatusOK,
-			Response{Data: []app.EventApp{}},
+			Response{Data: []app.Event{}},
 		},
 	}
 

@@ -11,12 +11,12 @@ import (
 )
 
 type Application interface {
-	AddEvent(event *app.EventApp) error
+	AddEvent(event *app.Event) error
 	RemoveEvent(ID string) error
-	UpdateEvent(event *app.EventApp) error
-	GetEventsByDay(date time.Time) ([]app.EventApp, error)
-	GetEventsByMonth(date time.Time) ([]app.EventApp, error)
-	GetEventsByWeek(date time.Time) ([]app.EventApp, error)
+	UpdateEvent(event *app.Event) error
+	GetEventsByDay(date time.Time) ([]app.Event, error)
+	GetEventsByMonth(date time.Time) ([]app.Event, error)
+	GetEventsByWeek(date time.Time) ([]app.Event, error)
 }
 
 type Server struct {
