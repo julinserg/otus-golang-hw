@@ -33,7 +33,7 @@ func (s *Storage) Close(ctx context.Context) error {
 	return s.db.Close()
 }
 
-func (s *Storage) Get(id string) (storage.Event, error) {
+func (s *Storage) get(id string) (storage.Event, error) {
 	ev := storage.Event{}
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE id=:id`, map[string]interface{}{"id": id})
@@ -200,4 +200,15 @@ func (s *Storage) MarkEventIsNotifyed(id string) error {
 		return storage.ErrEventIDNotExist
 	}
 	return err
+}
+
+func (s *Storage) RemoveOldYearEvent(timeLimit time.Time) (int64, error) {
+
+	result, err := s.db.Exec(`DELETE FROM events WHERE id IN 
+	(SELECT id FROM events WHERE time_start < to_timestamp('` + timeLimit.String() + `', 'YYYY-MM-DD HH24:MI:SS') - interval '1 year' LIMIT 100)`)
+	rowAffected, errResult := result.RowsAffected()
+	if err == nil {
+		err = errResult
+	}
+	return rowAffected, err
 }

@@ -55,7 +55,7 @@ func main() {
 	}()
 
 	calendarScheduler := app_calendar_scheduler.New(logg, sqlstor, config.AMQP.URI, config.AMQP.Exchange,
-		config.AMQP.ExchangeType, config.AMQP.Key, config.Scheduler.TimeoutCheck)
+		config.AMQP.ExchangeType, config.AMQP.Key, config.Scheduler.TimeoutCheckNotify, config.Scheduler.TimeoutCheckRemove)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -64,7 +64,7 @@ func main() {
 	logg.Info("calendar_scheduler is running...")
 
 	if err := calendarScheduler.Start(ctx); err != nil {
-		logg.Error("failed to start calendar_scheduler: " + err.Error())
+		logg.Error("calendar_scheduler failed: " + err.Error())
 		cancel()
 		return
 	}

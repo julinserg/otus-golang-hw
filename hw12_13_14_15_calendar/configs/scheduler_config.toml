@@ -11,4 +11,5 @@ exchangeType = "direct"
 key = "calendar-key"
 
 [scheduler]
-timeoutCheck = 5 # Second
+timeoutCheckNotify = 5 # Second
+timeoutCheckRemove = 10 # Second

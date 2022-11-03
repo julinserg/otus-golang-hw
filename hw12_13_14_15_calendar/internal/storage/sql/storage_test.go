@@ -63,30 +63,30 @@ func TestStorageBasic(t *testing.T) {
 	err = st.Add(event2)
 	require.Nil(t, err)
 
-	resGet, _ := st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ := st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, event1, resGet)
-	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, event2, resGet)
-	resGet, _ = st.Get("{81e125ce-072e-4556-8a4c-597572a7277a}")
+	resGet, _ = st.get("{81e125ce-072e-4556-8a4c-597572a7277a}")
 	require.Equal(t, storage.Event{}, resGet)
 
-	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, "event 1", resGet.Title)
-	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, "event 2", resGet.Title)
 
 	event1.Title = "event 5"
 	st.Update(event1)
 
-	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, "event 5", resGet.Title)
-	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, "event 2", resGet.Title)
 
 	st.Remove(event1.ID)
-	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, storage.Event{}, resGet)
-	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, event2, resGet)
 
 	event1.ID = "{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}"
@@ -284,5 +284,65 @@ func TestStorageGetEventForNotify(t *testing.T) {
 	res, err = st.GetEventsForNotify(time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC))
 	require.Nil(t, err)
 	require.Equal(t, 0, len(res))
+}
+
+func TestStorageRemoveOldYearEvent(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+	dbTest, err := sqlx.Open("pgx", dsn)
+	require.Nil(t, err)
+
+	err = dbTest.PingContext(ctx)
+	require.Nil(t, err)
+
+	dbTest.MustExec(schema)
+
+	dbTest.Close()
+
+	st := New()
+
+	err = st.Connect(ctx, dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(ctx); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
+
+	err = st.Add(storage.Event{
+		ID:        "1",
+		Title:     "event 1",
+		TimeStart: time.Date(2020, time.Month(1), 1, 10, 12, 9, 0, time.UTC),
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "2",
+		Title:            "event 2",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC),
+		NotificationTime: 5 * time.Minute,
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "3",
+		Title:            "event 3",
+		TimeStart:        time.Date(2024, time.Month(1), 1, 13, 10, 0, 0, time.UTC),
+		NotificationTime: 5 * time.Minute,
+	})
+
+	require.Nil(t, err)
+
+	limit := time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC)
+
+	res, err := st.RemoveOldYearEvent(limit)
+	require.Nil(t, err)
+	require.Equal(t, 1, int(res))
+
+	res, err = st.RemoveOldYearEvent(limit)
+	require.Nil(t, err)
+	require.Equal(t, 0, int(res))
 
 }

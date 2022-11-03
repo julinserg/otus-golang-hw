@@ -13,7 +13,8 @@ type Config struct {
 }
 
 type SchedulerConfig struct {
-	TimeoutCheck int
+	TimeoutCheckNotify int
+	TimeoutCheckRemove int
 }
 
 type LoggerConf struct {

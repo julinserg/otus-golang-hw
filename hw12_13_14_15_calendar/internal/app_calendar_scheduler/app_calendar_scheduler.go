@@ -3,6 +3,8 @@ package app_calendar_scheduler
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"sync"
 	"time"
 
 	amqp_pub "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/amqp/pub"
@@ -13,6 +15,7 @@ import (
 type Storage interface {
 	GetEventsForNotify(timeNow time.Time) ([]storage.Event, error)
 	MarkEventIsNotifyed(id string) error
+	RemoveOldYearEvent(timeLimit time.Time) (int64, error)
 }
 
 type Logger interface {
@@ -23,27 +26,29 @@ type Logger interface {
 }
 
 type AppCalendarScheduler struct {
-	logger       Logger
-	storage      Storage
-	pub          amqp_pub.AmqpPub
-	uri          string
-	exchange     string
-	exchangeType string
-	key          string
-	timeoutCheck int
+	logger                 Logger
+	storage                Storage
+	pub                    amqp_pub.AmqpPub
+	uri                    string
+	exchange               string
+	exchangeType           string
+	key                    string
+	timeoutCheckNeedNotify int
+	timeoutCheckNeedRemove int
 }
 
 func New(logger Logger, storage Storage,
 	uri string, exchange string, exchangeType string,
-	key string, timeoutCheck int) *AppCalendarScheduler {
+	key string, timeoutCheckNeedNotify int, timeoutCheckNeedRemove int) *AppCalendarScheduler {
 	return &AppCalendarScheduler{logger: logger,
-		storage:      storage,
-		pub:          *amqp_pub.New(logger),
-		uri:          uri,
-		exchange:     exchange,
-		exchangeType: exchangeType,
-		key:          key,
-		timeoutCheck: timeoutCheck,
+		storage:                storage,
+		pub:                    *amqp_pub.New(logger),
+		uri:                    uri,
+		exchange:               exchange,
+		exchangeType:           exchangeType,
+		key:                    key,
+		timeoutCheckNeedNotify: timeoutCheckNeedNotify,
+		timeoutCheckNeedRemove: timeoutCheckNeedRemove,
 	}
 }
 
@@ -81,17 +86,53 @@ func (a *AppCalendarScheduler) sendNotify() error {
 	return nil
 }
 
-func (a *AppCalendarScheduler) Start(ctx context.Context) error {
+func (a *AppCalendarScheduler) removeOldEvents() error {
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-time.After(time.Duration(a.timeoutCheck) * time.Second):
-			err := a.sendNotify()
-			if err != nil {
-				a.logger.Error(err.Error())
+	rows, err := a.storage.RemoveOldYearEvent(time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if rows > 0 {
+		a.logger.Info("removed " + strconv.FormatInt(rows, 10) + " old events")
+	}
+	return nil
+}
+
+func (a *AppCalendarScheduler) Start(ctx context.Context) error {
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var mainErr error
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Duration(a.timeoutCheckNeedNotify) * time.Second):
+				err := a.sendNotify()
+				if err != nil {
+					mainErr = err
+					return
+				}
 			}
 		}
-	}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Duration(a.timeoutCheckNeedRemove) * time.Second):
+				err := a.removeOldEvents()
+				if err != nil {
+					mainErr = err
+					return
+				}
+			}
+		}
+	}()
+	wg.Wait()
+	return mainErr
 }
