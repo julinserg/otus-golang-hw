@@ -74,7 +74,9 @@ func (s *Storage) Add(event storage.Event) error {
 	if len(event.ID) == 0 {
 		return storage.ErrEventIDNotSet
 	}
-
+	if _, ok := s.events[event.ID]; ok {
+		return storage.ErrEventIDAlreadyExist
+	}
 	if _, ok := s.eventsTime[event.TimeStart]; ok {
 		return storage.ErrTimeBusy
 	}

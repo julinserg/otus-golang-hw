@@ -4,9 +4,21 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
+
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 )
 
-type Server struct { // TODO
+type Application interface {
+	AddEvent(event *app.Event) error
+	RemoveEvent(ID string) error
+	UpdateEvent(event *app.Event) error
+	GetEventsByDay(date time.Time) ([]app.Event, error)
+	GetEventsByMonth(date time.Time) ([]app.Event, error)
+	GetEventsByWeek(date time.Time) ([]app.Event, error)
+}
+
+type Server struct {
 	server   *http.Server
 	logger   Logger
 	endpoint string
@@ -19,9 +31,6 @@ type Logger interface {
 	Warn(msg string)
 }
 
-type Application interface { // TODO
-}
-
 type StatusRecorder struct {
 	http.ResponseWriter
 	Status int
@@ -32,33 +41,33 @@ func (r *StatusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
-func serverHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is my calendar!"))
-}
-
 func NewServer(logger Logger, app Application, endpoint string) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", serverHandler)
 
 	server := &http.Server{
 		Addr:    endpoint,
 		Handler: loggingMiddleware(mux, logger),
 	}
+	ch := calendarHandler{logger, app}
+	mux.HandleFunc("/", hellowHandler)
+	mux.HandleFunc("/add", ch.addEvent)
+	mux.HandleFunc("/remove", ch.removeEvent)
+	mux.HandleFunc("/update", ch.updateEvent)
+	mux.HandleFunc("/get_by_day", ch.getEventsByDay)
+	mux.HandleFunc("/get_by_month", ch.getEventsByMonth)
+	mux.HandleFunc("/get_by_week", ch.getEventsByWeek)
 	return &Server{server, logger, endpoint}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info("server started on " + s.endpoint)
+	s.logger.Info("http server started on " + s.endpoint)
 	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
-	s.logger.Info("server stopped")
+	s.logger.Info("http server stopped")
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
-
-// TODO
