@@ -30,7 +30,7 @@ version: build
 	$(BIN_CND_SENDER) version
 	$(BIN_CND_SCHEDULER) version
 test:
-	go test -race ./internal/storage/memory/... ./internal/server/http/... ./internal/server/grpc/...
+	go test -race ./...
 
 generate:
 	protoc ./internal/server/grpc/api/calendar.proto --go_out=./internal/server/grpc/pb --go-grpc_out=./internal/server/grpc/pb  

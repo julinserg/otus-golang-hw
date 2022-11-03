@@ -17,8 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type LoggerFakeImpl struct {
-}
+type LoggerFakeImpl struct{}
 
 func (l LoggerFakeImpl) Info(msg string) {
 	fmt.Println("Info: " + msg)
@@ -132,5 +131,4 @@ func TestServiceGRPC(t *testing.T) {
 	require.Equal(t, len(resp.Events), 1)
 	require.Equal(t, resp.Events[0].Id, "2")
 	require.Equal(t, resp.Events[0].Title, "Title2")
-
 }

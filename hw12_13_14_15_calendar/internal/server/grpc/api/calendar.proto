@@ -37,6 +37,7 @@ message TimeRequest {
 }
 
 message ErrorResponse {
+  string error = 1;
 }
 
 message EventsResponse {

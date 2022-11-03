@@ -29,7 +29,7 @@ type calendarHandler struct {
 }
 
 type Response struct {
-	Data  []app.EventApp `json:"data"`
+	Data  []app.Event `json:"data"`
 	Error struct {
 		Message string `json:"message"`
 	} `json:"error"`
@@ -81,8 +81,10 @@ func (ch *calendarHandler) checkErrorAndSendResponse(err error, code int, w http
 	return true
 }
 
-type actionPost func() error
-type actionGet func() ([]app.EventApp, error)
+type (
+	actionPost func() error
+	actionGet  func() ([]app.Event, error)
+)
 
 func (ch *calendarHandler) genericHandlerPost(w http.ResponseWriter, r *http.Request, data interface{}, act actionPost) bool {
 	buf := make([]byte, r.ContentLength)
@@ -123,7 +125,7 @@ func (ch *calendarHandler) genericHandlerGet(w http.ResponseWriter, r *http.Requ
 }
 
 func (ch *calendarHandler) addEvent(w http.ResponseWriter, r *http.Request) {
-	req := &app.EventApp{}
+	req := &app.Event{}
 	ch.genericHandlerPost(w, r, req, func() error { return ch.app.AddEvent(req) })
 }
 
@@ -133,21 +135,21 @@ func (ch *calendarHandler) removeEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ch *calendarHandler) updateEvent(w http.ResponseWriter, r *http.Request) {
-	req := &app.EventApp{}
+	req := &app.Event{}
 	ch.genericHandlerPost(w, r, req, func() error { return ch.app.UpdateEvent(req) })
 }
 
 func (ch *calendarHandler) getEventsByDay(w http.ResponseWriter, r *http.Request) {
 	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByDay(req.Time) })
+	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByDay(req.Time) })
 }
 
 func (ch *calendarHandler) getEventsByMonth(w http.ResponseWriter, r *http.Request) {
 	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByMonth(req.Time) })
+	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByMonth(req.Time) })
 }
 
 func (ch *calendarHandler) getEventsByWeek(w http.ResponseWriter, r *http.Request) {
 	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.EventApp, error) { return ch.app.GetEventsByWeek(req.Time) })
+	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByWeek(req.Time) })
 }
