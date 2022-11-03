@@ -12,6 +12,7 @@ import (
 
 type Storage interface {
 	GetEventsForNotify(timeNow time.Time) ([]storage.Event, error)
+	MarkEventIsNotifyed(id string) error
 }
 
 type Logger interface {
@@ -47,12 +48,19 @@ func New(logger Logger, storage Storage,
 }
 
 func (a *AppCalendarScheduler) sendNotify() error {
-
-	events, err := a.storage.GetEventsForNotify(time.Now())
+	events, err := a.storage.GetEventsForNotify(time.Now().UTC())
 	if err != nil {
 		return err
 	}
-	events = append(events, storage.Event{ID: "id1", Title: "title1", UserID: "user1"})
+	if len(events) == 0 {
+		return nil
+	}
+	for _, ev := range events {
+		err := a.storage.MarkEventIsNotifyed(ev.ID)
+		if err != nil {
+			return err
+		}
+	}
 	for _, ev := range events {
 		nev := &app.NotifyEvent{
 			ID:        ev.ID,
@@ -80,7 +88,10 @@ func (a *AppCalendarScheduler) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(time.Duration(a.timeoutCheck) * time.Second):
-			a.sendNotify()
+			err := a.sendNotify()
+			if err != nil {
+				a.logger.Error(err.Error())
+			}
 		}
 	}
 }

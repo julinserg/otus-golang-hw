@@ -33,7 +33,7 @@ func (s *Storage) Close(ctx context.Context) error {
 	return s.db.Close()
 }
 
-func (s *Storage) get(id string) (storage.Event, error) {
+func (s *Storage) Get(id string) (storage.Event, error) {
 	ev := storage.Event{}
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE id=:id`, map[string]interface{}{"id": id})
@@ -53,7 +53,7 @@ func (s *Storage) get(id string) (storage.Event, error) {
 func (s *Storage) GetEventsByDay(date time.Time) ([]storage.Event, error) {
 	result := make([]storage.Event, 0)
 	dateDayBegin := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	dateDayEnd := date.AddDate(0, 0, 1)
+	dateDayEnd := dateDayBegin.AddDate(0, 0, 1)
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start < :timeE`,
 		map[string]interface{}{
@@ -192,27 +192,12 @@ func (s *Storage) GetEventsForNotify(timeNow time.Time) ([]storage.Event, error)
 	return result, nil
 }
 
-func (s *Storage) MarkEventIsNotifyed(event storage.Event) ([]storage.Event, error) {
-	/*//select id from events where time_start  <= to_timestamp('2022-10-23 01:05:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1 min' * time_notify
-	result := make([]storage.Event, 0)
-	rows, err := s.db.Queryx(`SELECT id,title,time_start,time_stop,description,
-	user_id,time_notify FROM events WHERE
-	time_notify > 0
-	AND
-	time_start <= to_timestamp('` + timeNow.String() + `', 'YYYY-MM-DD HH24:MI:SS') + (INTERVAL '1 milliseconds' * (time_notify/1000000))
-	AND is_notifyed is NULL
-	`)
-	if err != nil {
-		return nil, err
+func (s *Storage) MarkEventIsNotifyed(id string) error {
+
+	result, err := s.db.Exec(`UPDATE events SET is_notifyed=TRUE WHERE id = ` + `'` + id + `'`)
+	rowAffected, errResult := result.RowsAffected()
+	if err == nil && rowAffected == 0 && errResult == nil {
+		return storage.ErrEventIDNotExist
 	}
-	defer rows.Close()
-	for rows.Next() {
-		ev := storage.Event{}
-		err := rows.StructScan(&ev)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, ev)
-	}
-	return result, nil*/
+	return err
 }

@@ -63,30 +63,30 @@ func TestStorageBasic(t *testing.T) {
 	err = st.Add(event2)
 	require.Nil(t, err)
 
-	resGet, _ := st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ := st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, event1, resGet)
-	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, event2, resGet)
-	resGet, _ = st.get("{81e125ce-072e-4556-8a4c-597572a7277a}")
+	resGet, _ = st.Get("{81e125ce-072e-4556-8a4c-597572a7277a}")
 	require.Equal(t, storage.Event{}, resGet)
 
-	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, "event 1", resGet.Title)
-	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, "event 2", resGet.Title)
 
 	event1.Title = "event 5"
 	st.Update(event1)
 
-	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, "event 5", resGet.Title)
-	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, "event 2", resGet.Title)
 
 	st.Remove(event1.ID)
-	resGet, _ = st.get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
+	resGet, _ = st.Get("{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}")
 	require.Equal(t, storage.Event{}, resGet)
-	resGet, _ = st.get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
+	resGet, _ = st.Get("{95c3d43f-a8be-49ee-b5c6-d98fb25a38bc}")
 	require.Equal(t, event2, resGet)
 
 	event1.ID = "{0e745e54-0f24-4b4f-aa9f-3bd1167e55f9}"
@@ -277,4 +277,12 @@ func TestStorageGetEventForNotify(t *testing.T) {
 	require.Equal(t, 1, len(res))
 
 	require.Equal(t, "2", res[0].ID)
+
+	err = st.MarkEventIsNotifyed(res[0].ID)
+	require.Nil(t, err)
+
+	res, err = st.GetEventsForNotify(time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC))
+	require.Nil(t, err)
+	require.Equal(t, 0, len(res))
+
 }
