@@ -29,7 +29,7 @@ func (s *Storage) Connect(ctx context.Context, dsn string) error {
 	return s.db.PingContext(ctx)
 }
 
-func (s *Storage) Close(ctx context.Context) error {
+func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
@@ -167,7 +167,7 @@ func (s *Storage) Remove(id string) error {
 }
 
 func (s *Storage) GetEventsForNotify(timeNow time.Time) ([]storage.Event, error) {
-	//select id from events where time_start  <= to_timestamp('2022-10-23 01:05:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1 min' * time_notify
+	// select id from events where time_start  <= to_timestamp('2022-10-23 01:05:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1 min' * time_notify
 	result := make([]storage.Event, 0)
 	rows, err := s.db.Queryx(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE
@@ -193,7 +193,6 @@ func (s *Storage) GetEventsForNotify(timeNow time.Time) ([]storage.Event, error)
 }
 
 func (s *Storage) MarkEventIsNotifyed(id string) error {
-
 	result, err := s.db.Exec(`UPDATE events SET is_notifyed=TRUE WHERE id = ` + `'` + id + `'`)
 	rowAffected, errResult := result.RowsAffected()
 	if err == nil && rowAffected == 0 && errResult == nil {
@@ -203,7 +202,6 @@ func (s *Storage) MarkEventIsNotifyed(id string) error {
 }
 
 func (s *Storage) RemoveOldYearEvent(timeLimit time.Time) (int64, error) {
-
 	result, err := s.db.Exec(`DELETE FROM events WHERE id IN 
 	(SELECT id FROM events WHERE time_start < to_timestamp('` + timeLimit.String() + `', 'YYYY-MM-DD HH24:MI:SS') - interval '1 year' LIMIT 100)`)
 	rowAffected, errResult := result.RowsAffected()

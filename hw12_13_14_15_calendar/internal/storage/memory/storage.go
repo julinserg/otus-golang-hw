@@ -124,5 +124,3 @@ func New() *Storage {
 	s.create()
 	return s
 }
-
-// TODO

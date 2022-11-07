@@ -49,7 +49,7 @@ func main() {
 		return
 	}
 	defer func() {
-		if err := sqlstor.Close(ctxDB); err != nil {
+		if err := sqlstor.Close(); err != nil {
 			logg.Error("cannot close psql connection: " + err.Error())
 		}
 	}()
@@ -68,5 +68,4 @@ func main() {
 		cancel()
 		return
 	}
-
 }

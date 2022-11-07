@@ -39,8 +39,10 @@ type AppCalendarScheduler struct {
 
 func New(logger Logger, storage Storage,
 	uri string, exchange string, exchangeType string,
-	key string, timeoutCheckNeedNotify int, timeoutCheckNeedRemove int) *AppCalendarScheduler {
-	return &AppCalendarScheduler{logger: logger,
+	key string, timeoutCheckNeedNotify int, timeoutCheckNeedRemove int,
+) *AppCalendarScheduler {
+	return &AppCalendarScheduler{
+		logger:                 logger,
 		storage:                storage,
 		pub:                    *amqp_pub.New(logger),
 		uri:                    uri,
@@ -87,7 +89,6 @@ func (a *AppCalendarScheduler) sendNotify() error {
 }
 
 func (a *AppCalendarScheduler) removeOldEvents() error {
-
 	rows, err := a.storage.RemoveOldYearEvent(time.Now().UTC())
 	if err != nil {
 		return err

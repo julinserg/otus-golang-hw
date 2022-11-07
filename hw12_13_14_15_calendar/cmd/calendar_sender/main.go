@@ -55,5 +55,4 @@ func main() {
 		return
 	}
 	logg.Info("calendar_sender is stopping...")
-
 }

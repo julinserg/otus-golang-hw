@@ -29,7 +29,6 @@ func New(logger Logger, uri string, consumer string, queue string) *AppCalendarS
 }
 
 func (a *AppCalendarSender) Start(ctx context.Context) error {
-
 	conn, err := amqp.Dial(a.uri)
 	if err != nil {
 		return err
