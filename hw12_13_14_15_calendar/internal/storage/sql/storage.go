@@ -29,7 +29,7 @@ func (s *Storage) Connect(ctx context.Context, dsn string) error {
 	return s.db.PingContext(ctx)
 }
 
-func (s *Storage) Close(ctx context.Context) error {
+func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
@@ -53,7 +53,7 @@ func (s *Storage) get(id string) (storage.Event, error) {
 func (s *Storage) GetEventsByDay(date time.Time) ([]storage.Event, error) {
 	result := make([]storage.Event, 0)
 	dateDayBegin := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	dateDayEnd := date.AddDate(0, 0, 1)
+	dateDayEnd := dateDayBegin.AddDate(0, 0, 1)
 	rows, err := s.db.NamedQuery(`SELECT id,title,time_start,time_stop,description,
 	user_id,time_notify FROM events WHERE time_start >= :timeS AND time_start < :timeE`,
 		map[string]interface{}{
@@ -164,4 +164,49 @@ func (s *Storage) Remove(id string) error {
 		return storage.ErrEventIDNotExist
 	}
 	return err
+}
+
+func (s *Storage) GetEventsForNotify(timeNow time.Time) ([]storage.Event, error) {
+	// select id from events where time_start  <= to_timestamp('2022-10-23 01:05:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1 min' * time_notify
+	result := make([]storage.Event, 0)
+	rows, err := s.db.Queryx(`SELECT id,title,time_start,time_stop,description,
+	user_id,time_notify FROM events WHERE
+	is_notifyed is NULL
+	AND
+	time_notify > 0
+	AND 
+	time_start <= to_timestamp('` + timeNow.String() + `', 'YYYY-MM-DD HH24:MI:SS') + (INTERVAL '1 milliseconds' * (time_notify/1000000))
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		ev := storage.Event{}
+		err := rows.StructScan(&ev)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, ev)
+	}
+	return result, nil
+}
+
+func (s *Storage) MarkEventIsNotifyed(id string) error {
+	result, err := s.db.Exec(`UPDATE events SET is_notifyed=TRUE WHERE id = ` + `'` + id + `'`)
+	rowAffected, errResult := result.RowsAffected()
+	if err == nil && rowAffected == 0 && errResult == nil {
+		return storage.ErrEventIDNotExist
+	}
+	return err
+}
+
+func (s *Storage) RemoveOldYearEvent(timeLimit time.Time) (int64, error) {
+	result, err := s.db.Exec(`DELETE FROM events WHERE id IN 
+	(SELECT id FROM events WHERE time_start < to_timestamp('` + timeLimit.String() + `', 'YYYY-MM-DD HH24:MI:SS') - interval '1 year' LIMIT 100)`)
+	rowAffected, errResult := result.RowsAffected()
+	if err == nil {
+		err = errResult
+	}
+	return rowAffected, err
 }

@@ -4,7 +4,9 @@ package sqlstorage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -23,30 +25,40 @@ CREATE table events (
     description     text,
     user_id         text not null,    
     time_notify     bigint,
+	is_notifyed     boolean,
 	CONSTRAINT time_start_unique UNIQUE (time_start)
 );`
 
-func TestStorageBasic(t *testing.T) {
+var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+
+func dropAndCreateSchema() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
-	dbTest, err := sqlx.Open("pgx", dsn)
-	require.Nil(t, err)
+	dbTestConnect, err := sqlx.Open("pgx", dsn)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
 
-	err = dbTest.PingContext(ctx)
-	require.Nil(t, err)
+	defer dbTestConnect.Close()
 
-	dbTest.MustExec(schema)
+	err = dbTestConnect.PingContext(ctx)
+	if err != nil {
+		log.Fatal("cannot ping to db:", err)
+	}
 
-	dbTest.Close()
+	dbTestConnect.MustExec(schema)
+}
+
+func TestStorageBasic(t *testing.T) {
+	dropAndCreateSchema()
 
 	st := New()
 
-	err = st.Connect(ctx, dsn)
+	err := st.Connect(context.Background(), dsn)
 	require.Nil(t, err)
 	defer func() {
-		if err := st.Close(ctx); err != nil {
+		if err := st.Close(); err != nil {
 			fmt.Printf("cannot close psql connection: " + err.Error())
 		}
 	}()
@@ -101,26 +113,14 @@ func TestStorageBasic(t *testing.T) {
 }
 
 func TestStorageLogic(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	dsn := "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
-	dbTest, err := sqlx.Open("pgx", dsn)
-	require.Nil(t, err)
-
-	err = dbTest.PingContext(ctx)
-	require.Nil(t, err)
-
-	dbTest.MustExec(schema)
-
-	dbTest.Close()
+	dropAndCreateSchema()
 
 	st := New()
 
-	err = st.Connect(ctx, dsn)
+	err := st.Connect(context.Background(), dsn)
 	require.Nil(t, err)
 	defer func() {
-		if err := st.Close(ctx); err != nil {
+		if err := st.Close(); err != nil {
 			fmt.Printf("cannot close psql connection: " + err.Error())
 		}
 	}()
@@ -222,4 +222,103 @@ func TestStorageLogic(t *testing.T) {
 		TimeEnd:   time.Date(2022, time.Month(4), 20, 2, 10, 30, 0, time.UTC),
 	})
 	require.Nil(t, err)
+}
+
+func TestStorageGetEventForNotify(t *testing.T) {
+	dropAndCreateSchema()
+
+	st := New()
+
+	err := st.Connect(context.Background(), dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
+
+	err = st.Add(storage.Event{
+		ID:        "1",
+		Title:     "event 1",
+		TimeStart: time.Date(2022, time.Month(1), 1, 10, 12, 9, 0, time.UTC),
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "2",
+		Title:            "event 2",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC),
+		NotificationTime: sql.NullInt64{Int64: int64(5 * time.Minute), Valid: true},
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "3",
+		Title:            "event 3",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 13, 10, 0, 0, time.UTC),
+		NotificationTime: sql.NullInt64{Int64: int64(5 * time.Minute), Valid: true},
+	})
+
+	require.Nil(t, err)
+
+	res, err := st.GetEventsForNotify(time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC))
+	require.Nil(t, err)
+	require.Equal(t, 1, len(res))
+
+	require.Equal(t, "2", res[0].ID)
+
+	err = st.MarkEventIsNotifyed(res[0].ID)
+	require.Nil(t, err)
+
+	res, err = st.GetEventsForNotify(time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC))
+	require.Nil(t, err)
+	require.Equal(t, 0, len(res))
+}
+
+func TestStorageRemoveOldYearEvent(t *testing.T) {
+	dropAndCreateSchema()
+
+	st := New()
+
+	err := st.Connect(context.Background(), dsn)
+	require.Nil(t, err)
+	defer func() {
+		if err := st.Close(); err != nil {
+			fmt.Printf("cannot close psql connection: " + err.Error())
+		}
+	}()
+
+	err = st.Add(storage.Event{
+		ID:        "1",
+		Title:     "event 1",
+		TimeStart: time.Date(2020, time.Month(1), 1, 10, 12, 9, 0, time.UTC),
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "2",
+		Title:            "event 2",
+		TimeStart:        time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC),
+		NotificationTime: sql.NullInt64{Int64: int64(5 * time.Minute), Valid: true},
+	})
+	require.Nil(t, err)
+
+	err = st.Add(storage.Event{
+		ID:               "3",
+		Title:            "event 3",
+		TimeStart:        time.Date(2024, time.Month(1), 1, 13, 10, 0, 0, time.UTC),
+		NotificationTime: sql.NullInt64{Int64: int64(5 * time.Minute), Valid: true},
+	})
+
+	require.Nil(t, err)
+
+	limit := time.Date(2022, time.Month(1), 1, 12, 10, 0, 0, time.UTC)
+
+	res, err := st.RemoveOldYearEvent(limit)
+	require.Nil(t, err)
+	require.Equal(t, 1, int(res))
+
+	res, err = st.RemoveOldYearEvent(limit)
+	require.Nil(t, err)
+	require.Equal(t, 0, int(res))
 }

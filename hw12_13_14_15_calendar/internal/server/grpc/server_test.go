@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app_calendar"
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/server/grpc/pb"
 	memorystorage "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage/memory"
 	"github.com/stretchr/testify/require"
@@ -48,7 +48,7 @@ func TestServiceGRPC(t *testing.T) {
 	s := grpc.NewServer()
 	logg := LoggerFakeImpl{}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 	service := &ServiceCalendar{logger: logg, app: calendar}
 	pb.RegisterCalendarServer(s, service)
 	go func() {

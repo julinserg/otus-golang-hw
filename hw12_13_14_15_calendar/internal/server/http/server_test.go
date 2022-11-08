@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app_calendar"
 	stor "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage/memory"
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,7 @@ func (l LoggerFakeImpl) Warn(msg string) {
 func TestServiceAddEvent(t *testing.T) {
 	logg := LoggerFakeImpl{}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 	service := calendarHandler{logg, calendar}
 
 	cases := []struct {
@@ -121,7 +122,7 @@ func TestServiceAddEvent(t *testing.T) {
 func TestServiceRemoveEvent(t *testing.T) {
 	logg := LoggerFakeImpl{}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 	service := calendarHandler{logg, calendar}
 
 	event1 := stor.Event{
@@ -190,7 +191,7 @@ func TestServiceRemoveEvent(t *testing.T) {
 func TestServiceUpdateEvent(t *testing.T) {
 	logg := LoggerFakeImpl{}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 	service := calendarHandler{logg, calendar}
 
 	event1 := stor.Event{
@@ -259,7 +260,7 @@ func TestServiceUpdateEvent(t *testing.T) {
 func TestServiceGetEvents(t *testing.T) {
 	logg := LoggerFakeImpl{}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app_calendar.New(logg, storage)
 	service := calendarHandler{logg, calendar}
 
 	event1 := stor.Event{
