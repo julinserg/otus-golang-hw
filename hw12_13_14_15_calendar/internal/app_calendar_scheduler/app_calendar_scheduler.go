@@ -62,12 +62,7 @@ func (a *AppCalendarScheduler) sendNotify() error {
 	if len(events) == 0 {
 		return nil
 	}
-	for _, ev := range events {
-		err := a.storage.MarkEventIsNotifyed(ev.ID)
-		if err != nil {
-			return err
-		}
-	}
+
 	for _, ev := range events {
 		nev := &app.NotifyEvent{
 			ID:        ev.ID,
@@ -82,7 +77,13 @@ func (a *AppCalendarScheduler) sendNotify() error {
 		if err := a.pub.Publish(a.uri, a.exchange, a.exchangeType, a.key, string(data), true); err != nil {
 			return err
 		}
-		a.logger.Info("published OK")
+		a.logger.Info("notified event is OK ( EventId: " + ev.ID + ")")
+
+		err = a.storage.MarkEventIsNotifyed(ev.ID)
+		if err != nil {
+			return err
+		}
+		a.logger.Info("mark event as notified is OK ( EventId: " + ev.ID + ")")
 	}
 
 	return nil

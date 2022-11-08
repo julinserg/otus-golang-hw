@@ -11,9 +11,13 @@ build:
 	go build -v -o $(BIN_CND_SENDER) -ldflags "$(LDFLAGS)" ./cmd/calendar_sender
 	go build -v -o $(BIN_CND_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
 
-run: build
+run-calendar: build
 	$(BIN_CND) -config ./configs/config.toml
+
+run-sender: build
 	$(BIN_CND_SENDER) -config ./configs/sender_config.toml
+
+run-scheduler: build
 	$(BIN_CND_SCHEDULER) -config ./configs/scheduler_config.toml
 	
 build-img:

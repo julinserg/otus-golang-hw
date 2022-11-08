@@ -51,7 +51,6 @@ func main() {
 
 	if err := calendarSender.Start(ctx); err != nil {
 		logg.Error("failed to start calendar_sender: " + err.Error())
-		cancel()
 		return
 	}
 	logg.Info("calendar_sender is stopping...")
