@@ -1,5 +1,5 @@
 # Собираем в гошке
-FROM golang:1.16.2 as build
+FROM golang:1.17.2 as build
 
 ENV BIN_FILE /opt/calendar/calendar-app
 ENV CODE_DIR /go/src/
@@ -22,6 +22,8 @@ RUN CGO_ENABLED=0 go build \
 
 # На выходе тонкий образ
 FROM alpine:3.9
+
+EXPOSE 8080
 
 LABEL ORGANIZATION="OTUS Online Education"
 LABEL SERVICE="calendar"

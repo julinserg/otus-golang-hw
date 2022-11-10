@@ -1,1 +1,65 @@
 version: "3"
+networks:
+#  rabbit:
+#    driver: bridge
+  db:
+    driver: bridge
+
+services:
+  calendar_service:
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile
+    depends_on:
+      - postgres
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    expose:
+      - 8080
+    environment:
+      REG_SERVICE_DB_DSN: "postgres://sergey:sergey@postgres:5432/calendar?sslmode=disable"
+      REG_SERVICE_AMQP_DSN: "amqp://guest:guest@rabbit:5672/"
+      REG_SERVICE_SERVER_ADDR: ":8081"
+    networks:
+      #- rabbit
+      - db
+
+#  notification_service:
+#    build: cmd/notification-service
+#    depends_on:
+#      - rabbit
+#    restart: on-failure
+#    environment:
+#      NOTIFY_SERVICE_AMQP_DSN: "amqp://guest:guest@rabbit:5672/"
+#    networks:
+#      - rabbit
+
+  postgres:
+    image: postgres:11.1
+    ports:
+      - "5432:5432"
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: sergey
+      POSTGRES_PASSWORD: sergey
+      POSTGRES_DB: calendar
+    #volumes:
+      # https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh#L145
+      #- ./scripts/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    networks:
+      - db
+
+#  rabbit:
+#    image: rabbitmq:3.7.17-management
+#    ports:
+#      - "15672:15672"
+#      - "5672:5672"
+#    expose:
+#      - 15672
+#    volumes:
+#      - ./configs/rabbit.def.json:/etc/rabbitmq/definitions.json:ro
+#      - ./configs/rabbit.config:/etc/rabbitmq/rabbitmq.config:ro
+#    networks:
+#      - rabbit
