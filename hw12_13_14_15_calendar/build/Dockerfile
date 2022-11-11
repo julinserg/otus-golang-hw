@@ -21,7 +21,9 @@ RUN CGO_ENABLED=0 go build \
         -o ${BIN_FILE} cmd/calendar/*
 
 # На выходе тонкий образ
-FROM alpine:3.9
+FROM gomicro/goose
+
+ADD ./migrations/*.sql /migrations/
 
 EXPOSE 8080
 

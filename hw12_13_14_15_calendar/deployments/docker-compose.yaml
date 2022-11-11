@@ -10,6 +10,9 @@ services:
     build:
       context: ../
       dockerfile: ./build/Dockerfile
+    image: calendar_service_docker_image
+    volumes:
+      - ../configs/config.toml:/etc/calendar/config.toml:ro
     depends_on:
       - postgres
     restart: on-failure
@@ -17,12 +20,30 @@ services:
       - "8080:8080"
     expose:
       - 8080
-    environment:
-      REG_SERVICE_DB_DSN: "postgres://sergey:sergey@postgres:5432/calendar?sslmode=disable"
-      REG_SERVICE_AMQP_DSN: "amqp://guest:guest@rabbit:5672/"
-      REG_SERVICE_SERVER_ADDR: ":8081"
     networks:
-      #- rabbit
+      - db
+
+  calendar_service_migration:
+    image: calendar_service_docker_image
+    command: goose -dir /migrations postgres "host=postgres user=sergey password=sergey dbname=calendar sslmode=disable" up
+    depends_on:
+      - postgres
+      - calendar_service
+    restart: on-failure    
+    networks:
+      - db
+
+  postgres:
+    image: postgres:11.1
+    ports:
+      - "5432:5432"
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: sergey
+      POSTGRES_PASSWORD: sergey
+      POSTGRES_DB: calendar
+    networks:
       - db
 
 #  notification_service:
@@ -35,21 +56,7 @@ services:
 #    networks:
 #      - rabbit
 
-  postgres:
-    image: postgres:11.1
-    ports:
-      - "5432:5432"
-    expose:
-      - 5432
-    environment:
-      POSTGRES_USER: sergey
-      POSTGRES_PASSWORD: sergey
-      POSTGRES_DB: calendar
-    #volumes:
-      # https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh#L145
-      #- ./scripts/setup.sql:/docker-entrypoint-initdb.d/setup.sql
-    networks:
-      - db
+
 
 #  rabbit:
 #    image: rabbitmq:3.7.17-management
