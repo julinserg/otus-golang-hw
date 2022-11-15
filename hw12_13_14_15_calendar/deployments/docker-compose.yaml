@@ -1,7 +1,7 @@
 version: "3"
 networks:
-#  rabbit:
-#    driver: bridge
+  rabbit:
+    driver: bridge
   db:
     driver: bridge
 
@@ -9,17 +9,20 @@ services:
   calendar_service:
     build:
       context: ../
-      dockerfile: ./build/Dockerfile
-    image: calendar_service_docker_image
+      dockerfile: ./build/Dockerfile-calendar
+    image: calendar_service_docker_image    
     volumes:
-      - ../configs/config.toml:/etc/calendar/config.toml:ro
+      - ../configs/config.toml:/etc/calendar/config.toml:ro    
     depends_on:
-      - postgres
+      postgres:      
+          condition: service_healthy      
     restart: on-failure
     ports:
       - "8080:8080"
+      - "50001:50001"
     expose:
       - 8080
+      - 50001
     networks:
       - db
 
@@ -28,10 +31,41 @@ services:
     command: goose -dir /migrations postgres "host=postgres user=sergey password=sergey dbname=calendar sslmode=disable" up
     depends_on:
       - postgres
-      - calendar_service
+      - calendar_service   
     restart: on-failure    
     networks:
       - db
+
+  calendar_scheduler:
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile-scheduler
+    image: calendar_scheduler_service_docker_image
+    volumes:
+      - ../configs/scheduler_config.toml:/etc/calendar/scheduler_config.toml:ro
+    depends_on:
+      postgres:      
+          condition: service_healthy
+      rabbit:
+          condition: service_healthy
+    restart: on-failure   
+    networks:
+      - db
+      - rabbit
+
+  calendar_sender:
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile-sender
+    image: calendar_sender_service_docker_image
+    volumes:
+      - ../configs/sender_config.toml:/etc/calendar/sender_config.toml:ro
+    depends_on:
+      rabbit:
+          condition: service_healthy
+    restart: on-failure   
+    networks:
+      - rabbit
 
   postgres:
     image: postgres:11.1
@@ -45,28 +79,23 @@ services:
       POSTGRES_DB: calendar
     networks:
       - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d calendar -U sergey "]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-#  notification_service:
-#    build: cmd/notification-service
-#    depends_on:
-#      - rabbit
-#    restart: on-failure
-#    environment:
-#      NOTIFY_SERVICE_AMQP_DSN: "amqp://guest:guest@rabbit:5672/"
-#    networks:
-#      - rabbit
-
-
-
-#  rabbit:
-#    image: rabbitmq:3.7.17-management
-#    ports:
-#      - "15672:15672"
-#      - "5672:5672"
-#    expose:
-#      - 15672
-#    volumes:
-#      - ./configs/rabbit.def.json:/etc/rabbitmq/definitions.json:ro
-#      - ./configs/rabbit.config:/etc/rabbitmq/rabbitmq.config:ro
-#    networks:
-#      - rabbit
+  rabbit:
+    image: rabbitmq:3.9.25-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    expose:
+      - 15672
+    networks:
+      - rabbit
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3

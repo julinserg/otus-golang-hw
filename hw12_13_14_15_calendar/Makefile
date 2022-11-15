@@ -1,7 +1,6 @@
 BIN_CND := "./bin/calendar"
 BIN_CND_SENDER := "./bin/calendar_sender"
 BIN_CND_SCHEDULER := "./bin/calendar_scheduler"
-DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
@@ -20,15 +19,12 @@ run-sender: build
 run-scheduler: build
 	$(BIN_CND_SCHEDULER) -config ./configs/scheduler_config.toml
 	
-build-img:
-	docker build \
-		--build-arg=LDFLAGS="$(LDFLAGS)" \
-		-t $(DOCKER_IMG) \
-		-f build/Dockerfile .
+up:
+	docker-compose -f ./deployments/docker-compose.yaml up
 
-run-img: build-img
-	docker run $(DOCKER_IMG)
-
+down:
+	docker-compose -f ./deployments/docker-compose.yaml down
+	
 version: build
 	$(BIN_CND) version
 	$(BIN_CND_SENDER) version

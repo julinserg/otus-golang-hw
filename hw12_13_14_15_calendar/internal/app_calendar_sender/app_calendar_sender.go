@@ -18,14 +18,27 @@ type Logger interface {
 }
 
 type AppCalendarSender struct {
-	logger   Logger
-	uri      string
-	consumer string
-	queue    string
+	logger       Logger
+	uri          string
+	consumer     string
+	queue        string
+	exchange     string
+	exchangeType string
+	routingKey   string
 }
 
-func New(logger Logger, uri string, consumer string, queue string) *AppCalendarSender {
-	return &AppCalendarSender{logger: logger, uri: uri, consumer: consumer, queue: queue}
+func New(logger Logger, uri string, consumer string,
+	queue string, exchange string, exchangeType string,
+	routingKey string) *AppCalendarSender {
+	return &AppCalendarSender{
+		logger:       logger,
+		uri:          uri,
+		consumer:     consumer,
+		queue:        queue,
+		exchange:     exchange,
+		exchangeType: exchangeType,
+		routingKey:   routingKey,
+	}
 }
 
 func (a *AppCalendarSender) Start(ctx context.Context) error {
@@ -34,8 +47,11 @@ func (a *AppCalendarSender) Start(ctx context.Context) error {
 		return err
 	}
 
-	c := amqp_sub.New(a.consumer, conn)
-	msgs, err := c.Consume(ctx, a.queue)
+	c := amqp_sub.New(a.consumer, conn, a.logger)
+	msgs, err := c.Consume(ctx, a.queue, a.exchange, a.exchangeType, a.routingKey)
+	if err != nil {
+		return err
+	}
 
 	a.logger.Info("start consuming...")
 

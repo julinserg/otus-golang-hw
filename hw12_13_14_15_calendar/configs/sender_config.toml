@@ -2,6 +2,9 @@
 level = "INFO"
 
 [amqp]
-uri = "amqp://guest:guest@localhost:5672/"
-consumer = "calendar-consumer"
+uri = "amqp://guest:guest@rabbit:5672/"
+exchange = "calendar-exchange"
+exchangeType = "direct"
+key = "calendar-key"
 queue = "calendar-queue"
+consumer = "calendar-consumer"
