@@ -12,7 +12,7 @@ import (
 
 func hellowHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is my calendar! \n"))
+	w.Write([]byte("This is my calendar!"))
 }
 
 type RemoveEvent struct {

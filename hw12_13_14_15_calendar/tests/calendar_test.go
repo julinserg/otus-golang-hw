@@ -164,14 +164,14 @@ func (test *notifyTest) iReceiveEventWithText(text string) error {
 func InitializeScenario(s *godog.ScenarioContext) {
 	test := new(notifyTest)
 
-	s.Before(test.startConsuming)
+	//s.Before(test.startConsuming)
 
 	s.Step(`^I send "([^"]*)" request to "([^"]*)"$`, test.iSendRequestTo)
 	s.Step(`^The response code should be (\d+)$`, test.theResponseCodeShouldBe)
 	s.Step(`^The response should match text "([^"]*)"$`, test.theResponseShouldMatchText)
 
-	s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
+	/*s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
 	s.Step(`^I receive event with text "([^"]*)"$`, test.iReceiveEventWithText)
 
-	s.After(test.stopConsuming)
+	s.After(test.stopConsuming)*/
 }

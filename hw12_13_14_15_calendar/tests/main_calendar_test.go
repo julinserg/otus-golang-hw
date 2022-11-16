@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 		Name:                "integration",
 		ScenarioInitializer: InitializeScenario,
 		Options: &godog.Options{
-			Format:    "progress", // Замените на "pretty" для лучшего вывода
+			Format:    "pretty", // Замените на "pretty" для лучшего вывода
 			Paths:     []string{"features"},
 			Randomize: 0, // Последовательный порядок исполнения
 		},
