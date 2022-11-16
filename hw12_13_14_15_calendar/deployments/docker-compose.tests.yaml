@@ -69,12 +69,6 @@ services:
 
   postgres:
     image: postgres:11.1
-    ports:
-      - "5432:5432"
-    expose:
-      - 5432
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: sergey
       POSTGRES_PASSWORD: sergey
@@ -101,3 +95,15 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+
+  integration_tests:
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile-tests    
+    depends_on:
+      - calendar_service
+      - calendar_scheduler
+      - calendar_sender   
+    restart: on-failure    
+    networks:
+      - db

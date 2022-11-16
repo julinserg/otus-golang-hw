@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var schema = `
+var schemaDropAndCreate = `
 DROP table if exists events;
 CREATE table events (
     id              text primary key,
@@ -29,9 +30,17 @@ CREATE table events (
 	CONSTRAINT time_start_unique UNIQUE (time_start)
 );`
 
-var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
+var schemaDrop = `DROP table if exists events;`
 
-func dropAndCreateSchema() {
+var dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	dropSchema()
+	os.Exit(code)
+}
+
+func execSql(sql string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -47,7 +56,15 @@ func dropAndCreateSchema() {
 		log.Fatal("cannot ping to db:", err)
 	}
 
-	dbTestConnect.MustExec(schema)
+	dbTestConnect.MustExec(sql)
+}
+
+func dropAndCreateSchema() {
+	execSql(schemaDropAndCreate)
+}
+
+func dropSchema() {
+	execSql(schemaDrop)
 }
 
 func TestStorageBasic(t *testing.T) {
