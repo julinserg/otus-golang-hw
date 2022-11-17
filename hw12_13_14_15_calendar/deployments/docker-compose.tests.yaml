@@ -99,11 +99,13 @@ services:
   integration_tests:
     build:
       context: ../
-      dockerfile: ./build/Dockerfile-tests    
-    depends_on:
+      dockerfile: ./build/Dockerfile-tests  
+    command: "true" 
+    links:
       - calendar_service
       - calendar_scheduler
       - calendar_sender   
     restart: on-failure    
     networks:
       - db
+

@@ -36,7 +36,7 @@ integration-tests:
 	set -e ;\
 	docker-compose -f ./deployments/docker-compose.tests.yaml  up --build -d ;\
 	test_status_code=0 ;\
-	docker-compose -f ./deployments/docker-compose.tests.yaml  run integration_tests go test -race --tags=integration ./... || test_status_code=$$? ;\
+	docker-compose -f ./deployments/docker-compose.tests.yaml  run integration_tests go test -race -v --tags=integration ./... || test_status_code=$$? ;\
 	docker-compose -f ./deployments/docker-compose.tests.yaml  down ;\
 	exit $$test_status_code ;
 

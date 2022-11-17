@@ -1,4 +1,6 @@
-package app_calendar_test
+//go:build integration
+
+package calendar_integration_tests
 
 import (
 	"bytes"
