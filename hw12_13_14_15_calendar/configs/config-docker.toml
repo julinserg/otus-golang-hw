@@ -5,7 +5,7 @@ level = "INFO"
 type = "psql" # inmemory/psql
 
 [psql]
-dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
+dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
 
 [http]
 host = "0.0.0.0"

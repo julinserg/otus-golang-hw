@@ -12,7 +12,7 @@ services:
       dockerfile: ./build/Dockerfile-calendar
     image: calendar_service_docker_image    
     volumes:
-      - ../configs/config.toml:/etc/calendar/config.toml:ro    
+      - ../configs/config-docker.toml:/etc/calendar/config.toml:ro    
     depends_on:
       postgres:      
           condition: service_healthy      
@@ -42,7 +42,7 @@ services:
       dockerfile: ./build/Dockerfile-scheduler
     image: calendar_scheduler_service_docker_image
     volumes:
-      - ../configs/scheduler_config.toml:/etc/calendar/scheduler_config.toml:ro
+      - ../configs/scheduler_config-docker.toml:/etc/calendar/scheduler_config.toml:ro
     depends_on:
       postgres:      
           condition: service_healthy
@@ -59,7 +59,7 @@ services:
       dockerfile: ./build/Dockerfile-sender
     image: calendar_sender_service_docker_image
     volumes:
-      - ../configs/sender_config.toml:/etc/calendar/sender_config.toml:ro
+      - ../configs/sender_config-docker.toml:/etc/calendar/sender_config.toml:ro
     depends_on:
       rabbit:
           condition: service_healthy
