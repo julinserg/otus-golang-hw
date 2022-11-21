@@ -32,7 +32,7 @@ CREATE table events (
 
 var schemaDrop = `DROP table if exists events;`
 
-var dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
+var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
 
 func TestMain(m *testing.M) {
 	code := m.Run()

@@ -1,10 +1,9 @@
-//go:build integration
-
 package calendar_integration_tests
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 	"github.com/streadway/amqp"
 )
 
@@ -30,6 +30,13 @@ const (
 	queueName                 = "ToNotificationTest"
 	notificationsExchangeName = "UserNotifications"
 )
+
+type Response struct {
+	Data  []app.Event `json:"data"`
+	Error struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
 
 type notifyTest struct {
 	conn          *amqp.Connection
@@ -83,7 +90,6 @@ func (test *notifyTest) startConsuming(ctx context.Context, _ *messages.Pickle) 
 			}
 		}
 	}(test.stopSignal)
-
 	return ctx, nil
 }
 
@@ -93,7 +99,6 @@ func (test *notifyTest) stopConsuming(ctx context.Context, _ *messages.Pickle, _
 	panicOnErr(test.ch.Close())
 	panicOnErr(test.conn.Close())
 	test.messages = nil
-
 	return ctx, nil
 }
 
@@ -125,6 +130,15 @@ func (test *notifyTest) theResponseCodeShouldBe(code int) error {
 func (test *notifyTest) theResponseShouldMatchText(text string) error {
 	if string(test.responseBody) != text {
 		return fmt.Errorf("unexpected text: %s != %s", test.responseBody, text)
+	}
+	return nil
+}
+
+func (test *notifyTest) theResponseShouldMatchError(textError string) error {
+	result := Response{}
+	json.Unmarshal(test.responseBody, &result)
+	if result.Error.Message != textError {
+		return fmt.Errorf("unexpected error: %s != %s", result.Error.Message, textError)
 	}
 	return nil
 }
@@ -172,8 +186,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^The response code should be (\d+)$`, test.theResponseCodeShouldBe)
 	s.Step(`^The response should match text "([^"]*)"$`, test.theResponseShouldMatchText)
 
-	/*s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
+	s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
 	s.Step(`^I receive event with text "([^"]*)"$`, test.iReceiveEventWithText)
 
-	s.After(test.stopConsuming)*/
+	s.Step(`^The response should match error "([^"]*)"$`, test.theResponseShouldMatchError)
+
+	//s.After(test.stopConsuming)
+
 }
