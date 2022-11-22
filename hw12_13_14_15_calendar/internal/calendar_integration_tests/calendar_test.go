@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -18,12 +18,10 @@ import (
 	"github.com/streadway/amqp"
 )
 
-var amqpDSN = os.Getenv("TESTS_AMQP_DSN")
+var amqpDSN string
 
 func init() {
-	if amqpDSN == "" {
-		amqpDSN = "amqp://guest:guest@localhost:5672/"
-	}
+	amqpDSN = "amqp://guest:guest@localhost:5672/"
 }
 
 const (
@@ -77,7 +75,6 @@ func (test *notifyTest) startConsuming(ctx context.Context, _ *messages.Pickle) 
 
 	events, err := test.ch.Consume(queueName, "", true, true, false, false, nil)
 	panicOnErr(err)
-
 	go func(stop <-chan struct{}) {
 		for {
 			select {
@@ -143,6 +140,30 @@ func (test *notifyTest) theResponseShouldMatchError(textError string) error {
 	return nil
 }
 
+func (test *notifyTest) theResponseShouldMatchJson(jsonText string) error {
+	result := Response{}
+	json.Unmarshal(test.responseBody, &result)
+
+	idsReal := make(map[string]bool)
+	for _, e := range result.Data {
+		idsReal[e.ID] = true
+	}
+
+	resultTest := Response{}
+	json.Unmarshal([]byte(jsonText), &resultTest)
+
+	idsTest := make(map[string]bool)
+	for _, e := range resultTest.Data {
+		idsTest[e.ID] = true
+	}
+
+	if !reflect.DeepEqual(idsReal, idsTest) {
+		return fmt.Errorf("unexpected error: %v != %v", idsReal, idsTest)
+	}
+
+	return nil
+}
+
 func (test *notifyTest) iSendRequestToWithData(httpMethod, addr, contentType string, data *messages.PickleDocString) (err error) {
 	var r *http.Response
 
@@ -187,9 +208,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^The response should match text "([^"]*)"$`, test.theResponseShouldMatchText)
 
 	s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
-	s.Step(`^I receive event with text "([^"]*)"$`, test.iReceiveEventWithText)
+	//s.Step(`^I receive event with text "([^"]*)"$`, test.iReceiveEventWithText)
 
 	s.Step(`^The response should match error "([^"]*)"$`, test.theResponseShouldMatchError)
+
+	s.Step(`^The response should match json:$`, test.theResponseShouldMatchJson)
 
 	//s.After(test.stopConsuming)
 
