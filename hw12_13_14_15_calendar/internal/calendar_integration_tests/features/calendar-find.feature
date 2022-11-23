@@ -6,12 +6,12 @@
 Feature: Поиск событий в календаре по дате
 
 	Scenario: Доступность сервиса календаря
-		When I send "GET" request to "http://localhost:8080/"
+		When I send "GET" request to "http://calendar_service:8080/"
 		Then The response code should be 200
 		And The response should match text "This is my calendar!"
 
 	Scenario: Добавление корректного "события 10" в календарь
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "10",
@@ -24,7 +24,7 @@ Feature: Поиск событий в календаре по дате
 		And The response should match text ""
 
 	Scenario: Добавление корректного "события 20" в календарь
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "20",
@@ -37,7 +37,7 @@ Feature: Поиск событий в календаре по дате
 		And The response should match text ""
 
 	Scenario: Добавление корректного "события 30" в календарь
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "30",
@@ -50,7 +50,7 @@ Feature: Поиск событий в календаре по дате
 		And The response should match text ""
 	
 	Scenario: Получение списка событий за день - 2022-01-01
-		When I send "GET" request to "http://localhost:8080/get_by_day?time=2022-01-01T00:00:00Z"
+		When I send "GET" request to "http://calendar_service:8080/get_by_day?time=2022-01-01T00:00:00Z"
 		Then The response code should be 200
 		And The response should match json:
 		"""
@@ -64,7 +64,7 @@ Feature: Поиск событий в календаре по дате
 		"""
 
 	Scenario: Получение списка событий за день - 2023-01-01 (таких событий нет)
-		When I send "GET" request to "http://localhost:8080/get_by_day?time=2023-01-01T00:00:00Z"
+		When I send "GET" request to "http://calendar_service:8080/get_by_day?time=2023-01-01T00:00:00Z"
 		Then The response code should be 200
 		And The response should match json:
 		"""
@@ -74,7 +74,7 @@ Feature: Поиск событий в календаре по дате
 		"""
 	
 	Scenario: Получение списка событий за неделю начиная с 2022-01-01
-		When I send "GET" request to "http://localhost:8080/get_by_week?time=2022-01-01T00:00:00Z"
+		When I send "GET" request to "http://calendar_service:8080/get_by_week?time=2022-01-01T00:00:00Z"
 		Then The response code should be 200
 		And The response should match json:
 		"""
@@ -91,7 +91,7 @@ Feature: Поиск событий в календаре по дате
 		"""
 
 	Scenario: Получение списка событий за месяц начиная с 2022-01-01
-		When I send "GET" request to "http://localhost:8080/get_by_month?time=2022-01-01T00:00:00Z"
+		When I send "GET" request to "http://calendar_service:8080/get_by_month?time=2022-01-01T00:00:00Z"
 		Then The response code should be 200
 		And The response should match json:
 		"""

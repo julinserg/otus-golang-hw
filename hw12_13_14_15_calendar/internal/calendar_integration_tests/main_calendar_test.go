@@ -1,3 +1,5 @@
+//go:build integration
+
 package calendar_integration_tests
 
 import (
@@ -32,7 +34,7 @@ CREATE table events (
 
 var schemaDrop = `DROP table if exists events;`
 
-var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
+var dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
 
 func execSql(sql string) {
 	ctx, cancel := context.WithCancel(context.Background())

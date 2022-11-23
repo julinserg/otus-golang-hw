@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -30,15 +29,7 @@ CREATE table events (
 	CONSTRAINT time_start_unique UNIQUE (time_start)
 );`
 
-var schemaDrop = `DROP table if exists events;`
-
-var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
-
-func TestMain(m *testing.M) {
-	code := m.Run()
-	dropSchema()
-	os.Exit(code)
-}
+var dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
 
 func execSql(sql string) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -61,10 +52,6 @@ func execSql(sql string) {
 
 func dropAndCreateSchema() {
 	execSql(schemaDropAndCreate)
-}
-
-func dropSchema() {
-	execSql(schemaDrop)
 }
 
 func TestStorageBasic(t *testing.T) {

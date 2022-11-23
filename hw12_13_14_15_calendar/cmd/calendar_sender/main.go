@@ -41,7 +41,8 @@ func main() {
 	logg := logger.New(config.Logger.Level, f)
 
 	calendarSender := app_calendar_sender.New(logg, config.AMQP.URI,
-		config.AMQP.Consumer, config.AMQP.Queue, config.AMQP.Exchange, config.AMQP.ExchangeType, config.AMQP.Key)
+		config.AMQP.Consumer, config.AMQP.Queue, config.AMQP.Exchange, config.AMQP.ExchangeType, config.AMQP.Key,
+		config.AMQP.ExchangeUser, config.AMQP.ExchangeUserType,)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

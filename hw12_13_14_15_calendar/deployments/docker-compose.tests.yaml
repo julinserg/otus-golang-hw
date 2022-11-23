@@ -108,4 +108,5 @@ services:
     restart: on-failure    
     networks:
       - db
+      - rabbit
 

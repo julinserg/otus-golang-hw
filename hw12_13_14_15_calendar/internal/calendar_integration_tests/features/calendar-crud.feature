@@ -6,12 +6,12 @@
 Feature: Добавление/удаление/изменение событий в календаре
 
 	Scenario: Доступность сервиса календаря
-		When I send "GET" request to "http://localhost:8080/"
+		When I send "GET" request to "http://calendar_service:8080/"
 		Then The response code should be 200
 		And The response should match text "This is my calendar!"
 
 	Scenario: Добавление корректного "события 1" в календарь
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "1",
@@ -24,7 +24,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match text ""
 
 	Scenario: Добавление корректного "события 2" в календарь
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "2",
@@ -37,7 +37,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match text ""
 
 	Scenario: Добавление НЕ корректного "события 3" в календарь(время начала события уже занято)
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "3",
@@ -50,7 +50,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match error "time event is busy"
 	
 	Scenario: Добавление НЕ корректного "события 4" в календарь(невалидный json)
-		When I send "POST" request to "http://localhost:8080/add" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/add" with "application/json" data:
 		"""
 		{
 			"id": "4",
@@ -61,7 +61,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match error "unexpected end of JSON input"
 	
 	Scenario: Удаление "события 1"
-		When I send "POST" request to "http://localhost:8080/remove" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/remove" with "application/json" data:
 		"""
 		{
 			"id": "1"
@@ -71,7 +71,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match text ""
 	
 	Scenario: Повторное удаление "события 1" (ошибка)
-		When I send "POST" request to "http://localhost:8080/remove" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/remove" with "application/json" data:
 		"""
 		{
 			"id": "1"
@@ -81,7 +81,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match error "Event ID not exist"
 
 	Scenario: Обновление "события 2"
-		When I send "POST" request to "http://localhost:8080/update" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/update" with "application/json" data:
 		"""
 		{
 			"id": "2", 
@@ -94,7 +94,7 @@ Feature: Добавление/удаление/изменение событий
 		And The response should match text ""
 
 	Scenario: Обновление несуществующего "события 1" (ошибка)
-		When I send "POST" request to "http://localhost:8080/update" with "application/json" data:
+		When I send "POST" request to "http://calendar_service:8080/update" with "application/json" data:
 		"""
 		{
 			"id": "1", 

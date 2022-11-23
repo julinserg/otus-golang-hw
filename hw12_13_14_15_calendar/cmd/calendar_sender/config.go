@@ -15,12 +15,14 @@ type LoggerConf struct {
 }
 
 type AMQPConfig struct {
-	URI          string
-	Exchange     string
-	ExchangeType string
-	Key          string
-	Queue        string
-	Consumer     string
+	URI              string
+	Exchange         string
+	ExchangeType     string
+	Key              string
+	Queue            string
+	Consumer         string
+	ExchangeUser     string
+	ExchangeUserType string
 }
 
 func (c *Config) Read(fpath string) error {

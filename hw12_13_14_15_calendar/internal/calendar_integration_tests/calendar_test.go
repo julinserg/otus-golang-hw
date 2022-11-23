@@ -1,3 +1,5 @@
+//go:build integration
+
 package calendar_integration_tests
 
 import (
@@ -21,12 +23,12 @@ import (
 var amqpDSN string
 
 func init() {
-	amqpDSN = "amqp://guest:guest@localhost:5672/"
+	amqpDSN = "amqp://guest:guest@rabbit:5672/"
 }
 
 const (
-	queueName                 = "ToNotificationTest"
-	notificationsExchangeName = "UserNotifications"
+	queueName                 = "calendar-users-tests-queue"
+	notificationsExchangeName = "calendar-users-exchange"
 )
 
 type Response struct {
@@ -67,13 +69,13 @@ func (test *notifyTest) startConsuming(ctx context.Context, _ *messages.Pickle) 
 	panicOnErr(err)
 
 	// Consume
-	_, err = test.ch.QueueDeclare(queueName, true, true, true, false, nil)
+	_, err = test.ch.QueueDeclare(queueName, true, false, false, false, nil)
 	panicOnErr(err)
 
 	err = test.ch.QueueBind(queueName, "", notificationsExchangeName, false, nil)
 	panicOnErr(err)
 
-	events, err := test.ch.Consume(queueName, "", true, true, false, false, nil)
+	events, err := test.ch.Consume(queueName, "", false, false, false, false, nil)
 	panicOnErr(err)
 	go func(stop <-chan struct{}) {
 		for {
@@ -184,36 +186,41 @@ func (test *notifyTest) iSendRequestToWithData(httpMethod, addr, contentType str
 	return
 }
 
-func (test *notifyTest) iReceiveEventWithText(text string) error {
-	time.Sleep(3 * time.Second) // На всякий случай ждём обработки евента
+func (test *notifyTest) iReceiveEventWithJson(jsonText string) error {
+	time.Sleep(6 * time.Second) // На всякий случай ждём обработки евента
 
 	test.messagesMutex.RLock()
 	defer test.messagesMutex.RUnlock()
 
+	resultTest := app.NotifyEvent{}
+	json.Unmarshal([]byte(jsonText), &resultTest)
+
 	for _, msg := range test.messages {
-		if string(msg) == text {
+		result := app.NotifyEvent{}
+		json.Unmarshal(msg, &result)
+		if resultTest.ID == result.ID && resultTest.UserID == result.UserID {
 			return nil
 		}
 	}
-	return fmt.Errorf("event with text '%s' was not found in %s", text, test.messages)
+	return fmt.Errorf("event with text '%s' was not found in %s", jsonText, test.messages)
 }
 
 func InitializeScenario(s *godog.ScenarioContext) {
 	test := new(notifyTest)
 
-	//s.Before(test.startConsuming)
+	s.Before(test.startConsuming)
 
 	s.Step(`^I send "([^"]*)" request to "([^"]*)"$`, test.iSendRequestTo)
 	s.Step(`^The response code should be (\d+)$`, test.theResponseCodeShouldBe)
 	s.Step(`^The response should match text "([^"]*)"$`, test.theResponseShouldMatchText)
 
 	s.Step(`^I send "([^"]*)" request to "([^"]*)" with "([^"]*)" data:$`, test.iSendRequestToWithData)
-	//s.Step(`^I receive event with text "([^"]*)"$`, test.iReceiveEventWithText)
+	s.Step(`^I receive event with json:$`, test.iReceiveEventWithJson)
 
 	s.Step(`^The response should match error "([^"]*)"$`, test.theResponseShouldMatchError)
 
 	s.Step(`^The response should match json:$`, test.theResponseShouldMatchJson)
 
-	//s.After(test.stopConsuming)
+	s.After(test.stopConsuming)
 
 }
