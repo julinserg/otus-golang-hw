@@ -46,7 +46,8 @@ integration-tests-cleanup:
 		--volumes \
 		--remove-orphans \
 		--timeout 60; \
-  	docker-compose rm -f
+	cd deployments ; \
+  	docker-compose rm -f	
 
 generate:
 	protoc ./internal/server/grpc/api/calendar.proto --go_out=./internal/server/grpc/pb --go-grpc_out=./internal/server/grpc/pb  

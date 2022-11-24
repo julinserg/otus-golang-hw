@@ -81,6 +81,20 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres_storage_tests:
+    image: postgres:11.1
+    environment:
+      POSTGRES_USER: sergey-test
+      POSTGRES_PASSWORD: sergey-test
+      POSTGRES_DB: calendar-test  
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d calendar-test -U sergey-test "]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   rabbit:
     image: rabbitmq:3.9.25-management
     ports:
