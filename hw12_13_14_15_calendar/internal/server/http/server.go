@@ -2,30 +2,72 @@ package internalhttp
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 )
 
-type Server struct { // TODO
+type Application interface {
+	AddEvent(event *app.Event) error
+	RemoveEvent(ID string) error
+	UpdateEvent(event *app.Event) error
+	GetEventsByDay(date time.Time) ([]app.Event, error)
+	GetEventsByMonth(date time.Time) ([]app.Event, error)
+	GetEventsByWeek(date time.Time) ([]app.Event, error)
 }
 
-type Logger interface { // TODO
+type Server struct {
+	server   *http.Server
+	logger   Logger
+	endpoint string
 }
 
-type Application interface { // TODO
+type Logger interface {
+	Info(msg string)
+	Error(msg string)
+	Debug(msg string)
+	Warn(msg string)
 }
 
-func NewServer(logger Logger, app Application) *Server {
-	return &Server{}
+type StatusRecorder struct {
+	http.ResponseWriter
+	Status int
+}
+
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.Status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func NewServer(logger Logger, app Application, endpoint string) *Server {
+	mux := http.NewServeMux()
+
+	server := &http.Server{
+		Addr:    endpoint,
+		Handler: loggingMiddleware(mux, logger),
+	}
+	ch := calendarHandler{logger, app}
+	mux.HandleFunc("/", hellowHandler)
+	mux.HandleFunc("/add", ch.addEvent)
+	mux.HandleFunc("/remove", ch.removeEvent)
+	mux.HandleFunc("/update", ch.updateEvent)
+	mux.HandleFunc("/get_by_day", ch.getEventsByDay)
+	mux.HandleFunc("/get_by_month", ch.getEventsByMonth)
+	mux.HandleFunc("/get_by_week", ch.getEventsByWeek)
+	return &Server{server, logger, endpoint}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	// TODO
-	<-ctx.Done()
+	s.logger.Info("http server started on " + s.endpoint)
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	s.logger.Info("http server stopped")
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	// TODO
-	return nil
+	return s.server.Shutdown(ctx)
 }
-
-// TODO

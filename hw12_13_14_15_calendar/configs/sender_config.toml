@@ -1,0 +1,7 @@
+[logger]
+level = "INFO"
+
+[amqp]
+uri = "amqp://guest:guest@localhost:5672/"
+consumer = "calendar-consumer"
+queue = "calendar-queue"

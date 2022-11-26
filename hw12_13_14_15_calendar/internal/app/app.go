@@ -1,26 +1,40 @@
 package app
 
 import (
-	"context"
+	"time"
+
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage"
 )
 
-type App struct { // TODO
+type Event struct {
+	ID               string        `json:"id"`
+	Title            string        `json:"title"`
+	TimeStart        time.Time     `json:"time_start"`
+	TimeEnd          time.Time     `json:"time_stop"`
+	Description      string        `json:"description"`
+	UserID           string        `json:"user_id"`
+	NotificationTime time.Duration `json:"time_notify"`
 }
 
-type Logger interface { // TODO
+type NotifyEvent struct {
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	TimeStart time.Time `json:"time_start"`
+	UserID    string    `json:"user_id"`
 }
 
-type Storage interface { // TODO
+type Logger interface {
+	Info(msg string)
+	Error(msg string)
+	Debug(msg string)
+	Warn(msg string)
 }
 
-func New(logger Logger, storage Storage) *App {
-	return &App{}
+type Storage interface {
+	Add(event storage.Event) error
+	Update(event storage.Event) error
+	Remove(id string) error
+	GetEventsByDay(date time.Time) ([]storage.Event, error)
+	GetEventsByWeek(dateBeginWeek time.Time) ([]storage.Event, error)
+	GetEventsByMonth(dateBeginMonth time.Time) ([]storage.Event, error)
 }
-
-func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
-}
-
-// TODO

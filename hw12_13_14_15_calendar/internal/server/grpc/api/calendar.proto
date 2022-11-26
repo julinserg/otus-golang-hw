@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package calendar;
+option go_package = "./;pb";
+
+import "google/protobuf/timestamp.proto";
+
+service Calendar {
+  rpc AddEvent (EventRequest) returns (ErrorResponse) {}
+  rpc RemoveEvent (IdRequest) returns (ErrorResponse) {}
+  rpc UpdateEvent (EventRequest) returns (ErrorResponse) {}
+  rpc GetEventsByDay (TimeRequest) returns (EventsResponse) {}
+  rpc GetEventsByMonth (TimeRequest) returns (EventsResponse) {}
+  rpc GetEventsByWeek (TimeRequest) returns (EventsResponse) {}
+}
+
+message Event {
+  string id = 1;
+  string title = 2;
+  google.protobuf.Timestamp timeStart = 3;
+  google.protobuf.Timestamp timeEnd = 4;
+  string description = 5;
+  string userID = 6;
+  int64 notificationTime = 7;
+}
+
+message EventRequest {
+  Event event = 1;
+}
+
+message IdRequest {
+  string id = 1;
+}
+
+message TimeRequest {
+  google.protobuf.Timestamp date = 1;
+}
+
+message ErrorResponse {
+  string error = 1;
+}
+
+message EventsResponse {
+  string error = 1;
+  repeated Event events = 2;  
+}

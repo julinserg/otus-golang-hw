@@ -6,34 +6,18 @@ import "github.com/BurntSushi/toml"
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger  LoggerConf
-	PSQL    PSQLConfig
-	Storage StorageConfig
-	HTTP    HTTPConfig
-	GRPC    GRPCConfig
+	Logger LoggerConf
+	AMQP   AMQPConfig
 }
 
 type LoggerConf struct {
 	Level string
-	// TODO
 }
 
-type PSQLConfig struct {
-	DSN string
-}
-
-type StorageConfig struct {
-	Type string
-}
-
-type HTTPConfig struct {
-	Host string
-	Port string
-}
-
-type GRPCConfig struct {
-	Host string
-	Port string
+type AMQPConfig struct {
+	URI      string
+	Consumer string
+	Queue    string
 }
 
 func (c *Config) Read(fpath string) error {
