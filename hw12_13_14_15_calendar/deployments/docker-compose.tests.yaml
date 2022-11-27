@@ -69,12 +69,6 @@ services:
 
   postgres:
     image: postgres:11.1
-    ports:
-      - "5432:5432"
-    expose:
-      - 5432
-    #volumes:
-    #  - ./postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: sergey
       POSTGRES_PASSWORD: sergey
@@ -83,6 +77,20 @@ services:
       - db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d calendar -U sergey "]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres_storage_tests:
+    image: postgres:11.1
+    environment:
+      POSTGRES_USER: sergey-test
+      POSTGRES_PASSWORD: sergey-test
+      POSTGRES_DB: calendar-test  
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d calendar-test -U sergey-test "]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -101,3 +109,18 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+
+  integration_tests:
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile-tests  
+    command: "true" 
+    links:
+      - calendar_service
+      - calendar_scheduler
+      - calendar_sender   
+    restart: on-failure    
+    networks:
+      - db
+      - rabbit
+

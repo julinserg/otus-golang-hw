@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -296,18 +297,18 @@ func TestServiceGetEvents(t *testing.T) {
 		responseBody Response
 	}{
 		{
-			"bad_request", http.MethodGet, "http://test.test/get_by_day", nil, http.StatusBadRequest,
+			"bad_request", http.MethodGet, "http://test.test/get_by_day?time=1", nil, http.StatusBadRequest,
 			Response{Error: struct {
 				Message string `json:"message"`
 			}{
-				Message: "unexpected end of JSON input",
+				Message: "parsing time \"1\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"1\" as \"2006\"",
 			}},
 		},
 		{
 			"get-event-by-day-1",
 			http.MethodGet,
-			"http://test.test/get_by_day",
-			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_day?time=2022-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{
 				Data: []app.Event{{
@@ -324,16 +325,16 @@ func TestServiceGetEvents(t *testing.T) {
 		{
 			"get-event-by-day-2",
 			http.MethodGet,
-			"http://test.test/get_by_day",
-			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_day?time=2023-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{Data: []app.Event{}},
 		},
 		{
 			"get-event-by-week-1",
 			http.MethodGet,
-			"http://test.test/get_by_week",
-			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_week?time=2022-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{Data: []app.Event{
 				{
@@ -359,16 +360,16 @@ func TestServiceGetEvents(t *testing.T) {
 		{
 			"get-event-by-week-2",
 			http.MethodGet,
-			"http://test.test/get_by_week",
-			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_week?time=2023-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{Data: []app.Event{}},
 		},
 		{
 			"get-event-by-month-1",
 			http.MethodGet,
-			"http://test.test/get_by_month",
-			bytes.NewBufferString(`{"time": "2022-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_month?time=2022-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{Data: []app.Event{
 				{
@@ -403,8 +404,8 @@ func TestServiceGetEvents(t *testing.T) {
 		{
 			"get-event-by-month-2",
 			http.MethodGet,
-			"http://test.test/get_by_month",
-			bytes.NewBufferString(`{"time": "2023-01-01T00:00:00Z"}`),
+			"http://test.test/get_by_month?time=2023-01-01T00:00:00Z",
+			nil,
 			http.StatusOK,
 			Response{Data: []app.Event{}},
 		},
@@ -414,11 +415,11 @@ func TestServiceGetEvents(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			r := httptest.NewRequest(c.method, c.target, c.body)
 			w := httptest.NewRecorder()
-			if c.target == "http://test.test/get_by_day" {
+			if strings.Contains(c.target, "http://test.test/get_by_day") {
 				service.getEventsByDay(w, r)
-			} else if c.target == "http://test.test/get_by_week" {
+			} else if strings.Contains(c.target, "http://test.test/get_by_week") {
 				service.getEventsByWeek(w, r)
-			} else if c.target == "http://test.test/get_by_month" {
+			} else if strings.Contains(c.target, "http://test.test/get_by_month") {
 				service.getEventsByMonth(w, r)
 			}
 			resp := w.Result()

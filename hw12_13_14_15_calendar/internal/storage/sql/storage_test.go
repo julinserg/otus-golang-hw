@@ -6,52 +6,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/integration_tests_utils"
 	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
-var schema = `
-DROP table if exists events;
-CREATE table events (
-    id              text primary key,
-    title           text not null,
-    time_start      timestamp not null,
-    time_stop       timestamp not null,
-    description     text,
-    user_id         text not null,    
-    time_notify     bigint,
-	is_notifyed     boolean,
-	CONSTRAINT time_start_unique UNIQUE (time_start)
-);`
-
-var dsn = "host=localhost port=5432 user=sergey password=sergey dbname=calendar_test sslmode=disable"
-
-func dropAndCreateSchema() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	dbTestConnect, err := sqlx.Open("pgx", dsn)
-	if err != nil {
-		log.Fatal("cannot connect to db:", err)
-	}
-
-	defer dbTestConnect.Close()
-
-	err = dbTestConnect.PingContext(ctx)
-	if err != nil {
-		log.Fatal("cannot ping to db:", err)
-	}
-
-	dbTestConnect.MustExec(schema)
-}
+var dsn = "host=postgres_storage_tests port=5432 user=sergey-test password=sergey-test dbname=calendar-test sslmode=disable"
 
 func TestStorageBasic(t *testing.T) {
-	dropAndCreateSchema()
+	integration_tests_utils.DropAndCreateSchema(dsn)
 
 	st := New()
 
@@ -113,7 +79,7 @@ func TestStorageBasic(t *testing.T) {
 }
 
 func TestStorageLogic(t *testing.T) {
-	dropAndCreateSchema()
+	integration_tests_utils.DropAndCreateSchema(dsn)
 
 	st := New()
 
@@ -225,7 +191,7 @@ func TestStorageLogic(t *testing.T) {
 }
 
 func TestStorageGetEventForNotify(t *testing.T) {
-	dropAndCreateSchema()
+	integration_tests_utils.DropAndCreateSchema(dsn)
 
 	st := New()
 
@@ -276,7 +242,7 @@ func TestStorageGetEventForNotify(t *testing.T) {
 }
 
 func TestStorageRemoveOldYearEvent(t *testing.T) {
-	dropAndCreateSchema()
+	integration_tests_utils.DropAndCreateSchema(dsn)
 
 	st := New()
 

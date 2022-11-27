@@ -12,6 +12,36 @@ type AmqpPub struct {
 	logger app.Logger
 }
 
+func (a *AmqpPub) CreateExchange(amqpURI, exchange, exchangeType string) error {
+	a.logger.Info("dialing: " + amqpURI)
+	connection, err := amqp.Dial(amqpURI)
+	if err != nil {
+		return fmt.Errorf("Dial: %s", err)
+	}
+	defer connection.Close()
+
+	a.logger.Info("got Connection, getting Channel")
+	channel, err := connection.Channel()
+	if err != nil {
+		return fmt.Errorf("Channel: %s", err)
+	}
+
+	a.logger.Info("got Channel, declaring Exchange:" + exchange)
+	if err := channel.ExchangeDeclare(
+		exchange,     // name
+		exchangeType, // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // noWait
+		nil,          // arguments
+	); err != nil {
+		return fmt.Errorf("Exchange Declare: %s", err)
+	}
+
+	return nil
+}
+
 func (a *AmqpPub) Publish(amqpURI, exchange, exchangeType, routingKey, body string, reliable bool) error {
 	// This function dials, connects, declares, publishes, and tears down,
 	// all in one go. In a real service, you probably want to maintain a

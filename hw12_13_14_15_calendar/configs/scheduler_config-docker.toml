@@ -1,0 +1,15 @@
+[logger]
+level = "INFO"
+
+[psql]
+dsn = "host=postgres port=5432 user=sergey password=sergey dbname=calendar sslmode=disable"
+
+[amqp]
+uri = "amqp://guest:guest@rabbit:5672/"
+exchange = "calendar-exchange"
+exchangeType = "direct"
+key = "calendar-key"
+
+[scheduler]
+timeoutCheckNotify = 5 # Second
+timeoutCheckRemove = 10 # Second

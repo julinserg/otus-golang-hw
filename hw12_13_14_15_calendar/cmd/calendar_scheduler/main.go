@@ -65,6 +65,6 @@ func main() {
 
 	if err := calendarScheduler.Start(ctx); err != nil {
 		logg.Error("calendar_scheduler failed: " + err.Error())
-		return
+		os.Exit(1)
 	}
 }

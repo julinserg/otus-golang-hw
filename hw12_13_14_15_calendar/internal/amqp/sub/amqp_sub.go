@@ -3,8 +3,8 @@ package amqp_sub
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/julinserg/go_home_work/hw12_13_14_15_calendar/internal/app"
 	"github.com/streadway/amqp"
 )
 
@@ -12,15 +12,17 @@ type RMQConnection interface {
 	Channel() (*amqp.Channel, error)
 }
 
-type Consumer struct {
-	name string
-	conn RMQConnection
+type AmqpSub struct {
+	name   string
+	logger app.Logger
+	conn   RMQConnection
 }
 
-func New(name string, conn RMQConnection) *Consumer {
-	return &Consumer{
-		name: name,
-		conn: conn,
+func New(name string, conn RMQConnection, logger app.Logger) *AmqpSub {
+	return &AmqpSub{
+		name:   name,
+		conn:   conn,
+		logger: logger,
 	}
 }
 
@@ -29,22 +31,61 @@ type Message struct {
 	Data []byte
 }
 
-func (c *Consumer) Consume(ctx context.Context, queue string) (<-chan Message, error) {
+func (amqpSub *AmqpSub) Consume(ctx context.Context, queueName string,
+	exchangeName string, exchangeType string, key string) (<-chan Message, error) {
 	messages := make(chan Message)
 
-	ch, err := c.conn.Channel()
+	ch, err := amqpSub.conn.Channel()
 	if err != nil {
 		return nil, fmt.Errorf("open channel: %w", err)
+	}
+
+	if err = ch.ExchangeDeclare(
+		exchangeName, // name of the exchange
+		exchangeType, // type
+		true,         // durable
+		false,        // delete when complete
+		false,        // internal
+		false,        // noWait
+		nil,          // arguments
+	); err != nil {
+		return nil, fmt.Errorf("Exchange Declare: %s", err)
+	}
+
+	amqpSub.logger.Info("declared Exchange, declaring Queue " + queueName)
+	queue, err := ch.QueueDeclare(
+		queueName, // name of the queue
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // noWait
+		nil,       // arguments
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Queue Declare: %s", err)
+	}
+
+	amqpSub.logger.Info(fmt.Sprintf("declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
+		queue.Name, queue.Messages, queue.Consumers, key))
+
+	if err = ch.QueueBind(
+		queue.Name,   // name of the queue
+		key,          // bindingKey
+		exchangeName, // sourceExchange
+		false,        // noWait
+		nil,          // arguments
+	); err != nil {
+		return nil, fmt.Errorf("Queue Bind: %s", err)
 	}
 
 	go func() {
 		<-ctx.Done()
 		if err := ch.Close(); err != nil {
-			log.Println(err)
+			amqpSub.logger.Error(err.Error())
 		}
 	}()
-
-	deliveries, err := ch.Consume(queue, c.name, false, false, false, false, nil)
+	amqpSub.logger.Info(fmt.Sprintf("Queue bound to Exchange, starting Consume (consumer tag %q)", amqpSub.name))
+	deliveries, err := ch.Consume(queue.Name, amqpSub.name, false, false, false, false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("start consuming: %w", err)
 	}
@@ -52,7 +93,7 @@ func (c *Consumer) Consume(ctx context.Context, queue string) (<-chan Message, e
 	go func() {
 		defer func() {
 			close(messages)
-			log.Println("close messages channel")
+			amqpSub.logger.Info("close messages channel")
 		}()
 
 		for {
@@ -61,7 +102,7 @@ func (c *Consumer) Consume(ctx context.Context, queue string) (<-chan Message, e
 				return
 			case del := <-deliveries:
 				if err := del.Ack(false); err != nil {
-					log.Println(err)
+					amqpSub.logger.Error(err.Error())
 				}
 
 				msg := Message{

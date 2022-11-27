@@ -12,7 +12,7 @@ import (
 
 func hellowHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is my calendar! \n"))
+	w.Write([]byte("This is my calendar!"))
 }
 
 type RemoveEvent struct {
@@ -48,21 +48,12 @@ func (ch *calendarHandler) WriteResponse(w http.ResponseWriter, resp *Response) 
 	return
 }
 
-func (ch *calendarHandler) checkRequest(methodType string, w http.ResponseWriter, r *http.Request, buf []byte) bool {
+func (ch *calendarHandler) checkRequest(methodType string, w http.ResponseWriter, r *http.Request) bool {
 	if r.Method != methodType {
 		resp := &Response{}
 		resp.Error.Message = fmt.Sprintf("method %s not supported on uri %s", r.Method, r.URL.Path)
 		ch.logger.Error(resp.Error.Message)
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		ch.WriteResponse(w, resp)
-		return false
-	}
-	_, err := r.Body.Read(buf)
-	if err != nil && err != io.EOF {
-		resp := &Response{}
-		resp.Error.Message = err.Error()
-		ch.logger.Error(resp.Error.Message)
-		w.WriteHeader(http.StatusBadRequest)
 		ch.WriteResponse(w, resp)
 		return false
 	}
@@ -83,16 +74,27 @@ func (ch *calendarHandler) checkErrorAndSendResponse(err error, code int, w http
 
 type (
 	actionPost func() error
-	actionGet  func() ([]app.Event, error)
+	actionGet  func(date time.Time) ([]app.Event, error)
 )
 
 func (ch *calendarHandler) genericHandlerPost(w http.ResponseWriter, r *http.Request, data interface{}, act actionPost) bool {
-	buf := make([]byte, r.ContentLength)
-	if !ch.checkRequest(http.MethodPost, w, r, buf) {
+
+	if !ch.checkRequest(http.MethodPost, w, r) {
 		return false
 	}
 
-	err := json.Unmarshal(buf, data)
+	buf := make([]byte, r.ContentLength)
+	_, err := r.Body.Read(buf)
+	if err != nil && err != io.EOF {
+		resp := &Response{}
+		resp.Error.Message = err.Error()
+		ch.logger.Error(resp.Error.Message)
+		w.WriteHeader(http.StatusBadRequest)
+		ch.WriteResponse(w, resp)
+		return false
+	}
+
+	err = json.Unmarshal(buf, data)
 	if !ch.checkErrorAndSendResponse(err, http.StatusBadRequest, w) {
 		return false
 	}
@@ -104,17 +106,22 @@ func (ch *calendarHandler) genericHandlerPost(w http.ResponseWriter, r *http.Req
 	return true
 }
 
-func (ch *calendarHandler) genericHandlerGet(w http.ResponseWriter, r *http.Request, data interface{}, act actionGet) bool {
-	buf := make([]byte, r.ContentLength)
-	if !ch.checkRequest(http.MethodGet, w, r, buf) {
+func (ch *calendarHandler) genericHandlerGet(w http.ResponseWriter, r *http.Request, act actionGet) bool {
+
+	if !ch.checkRequest(http.MethodGet, w, r) {
 		return false
 	}
+	strTime := r.URL.Query().Get("time")
+	var err error
+	if len(strTime) == 0 {
+		err = fmt.Errorf("Time is empty")
+	}
 
-	err := json.Unmarshal(buf, data)
+	time, err := time.Parse(time.RFC3339, strTime)
 	if !ch.checkErrorAndSendResponse(err, http.StatusBadRequest, w) {
 		return false
 	}
-	events, err := act()
+	events, err := act(time)
 	if !ch.checkErrorAndSendResponse(err, http.StatusInternalServerError, w) {
 		return false
 	}
@@ -140,16 +147,13 @@ func (ch *calendarHandler) updateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ch *calendarHandler) getEventsByDay(w http.ResponseWriter, r *http.Request) {
-	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByDay(req.Time) })
+	ch.genericHandlerGet(w, r, func(date time.Time) ([]app.Event, error) { return ch.app.GetEventsByDay(date) })
 }
 
 func (ch *calendarHandler) getEventsByMonth(w http.ResponseWriter, r *http.Request) {
-	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByMonth(req.Time) })
+	ch.genericHandlerGet(w, r, func(date time.Time) ([]app.Event, error) { return ch.app.GetEventsByMonth(date) })
 }
 
 func (ch *calendarHandler) getEventsByWeek(w http.ResponseWriter, r *http.Request) {
-	req := &GetEvent{}
-	ch.genericHandlerGet(w, r, req, func() ([]app.Event, error) { return ch.app.GetEventsByWeek(req.Time) })
+	ch.genericHandlerGet(w, r, func(date time.Time) ([]app.Event, error) { return ch.app.GetEventsByWeek(date) })
 }
